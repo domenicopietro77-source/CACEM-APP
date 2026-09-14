@@ -68,3 +68,38 @@ qa('.cac-extra-side [data-cat]').forEach(b=>b.onclick=()=>{qa('.cac-extra-side b
 $('topLoad')?.addEventListener('click',()=>$('fileInput')?.click());$('topCsv')?.addEventListener('click',()=>$('exportBtn')?.click());$('topParams')?.addEventListener('click',()=>$('params')?.scrollIntoView({behavior:'smooth'}));
 renderCards?.();renderAbaco?.();renderSVG();sectionsUI();paramsUI();categoryInfo();
 })();
+
+/* CACEM_DXF_EVENTS_FIX */
+(function(){
+  function st(m,b){var x=document.getElementById('status');if(x)x.textContent=m;var d=document.getElementById('statusDot');if(d)d.style.color=b?'#d33':'#19a05d'}
+  function inp(){return document.getElementById('fileInput')||document.getElementById('file')}
+  function open(){var f=inp();if(f){f.setAttribute('accept','.dxf,.dwg');f.click()}else{st('Controllo caricamento DXF non disponibile: input file mancante.',true)}}
+  function wire(){
+    var f=inp(); if(!f)return;
+    ['chooseBtn','loadBtn','topLoad','cacLoad'].forEach(function(id){var b=document.getElementById(id);if(b){b.onclick=function(e){e.preventDefault();open()}}});
+    if(!f.dataset.cacemDxfFix){
+      f.dataset.cacemDxfFix='1';
+      f.onchange=function(e){
+        var file=e.target.files&&e.target.files[0];if(!file)return;
+        if(!/\\.dxf$/i.test(file.name)){st('Seleziona un file DXF. Il DWG richiede un motore DWG dedicato.',true);return}
+        st('Lettura DXF in corso: '+file.name+' …');
+        var r=new FileReader();
+        r.onerror=function(){st('Errore nella lettura del file DXF.',true)};
+        r.onload=function(){try{
+          if(typeof window.DxfParser!=='function')throw new Error('Libreria DXF non disponibile');
+          var text=String(r.result||'');if(!text.trim())throw new Error('Il file DXF è vuoto');
+          if(window.CACEM&&typeof window.CACEM.parse==='function'){
+            window.CACEM.E=window.CACEM.parse(text);window.CACEM.file=file.name;
+            if(typeof window.renderCards==='function')window.renderCards();if(typeof window.renderAbaco==='function')window.renderAbaco();if(typeof window.renderParams==='function')window.renderParams();if(typeof window.renderSVG==='function')window.renderSVG();if(typeof window.render3D==='function')window.render3D();
+            var mn=document.getElementById('modelName');if(mn)mn.textContent=file.name;
+            st('DXF caricato: '+file.name+' · '+window.CACEM.E.length+' elementi riconosciuti');
+          }else throw new Error('Motore CACEM non disponibile');
+        }catch(err){console.error(err);st('Errore DXF: '+(err.message||err),true)}finally{e.target.value=''}};
+        r.readAsText(file,'UTF-8');
+      };
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
+  window.addEventListener('load',function(){wire();setTimeout(wire,300)});
+})();
+
