@@ -1,0 +1,33 @@
+name: Apply CACEM professional UI
+on:
+  push:
+    branches: [main]
+jobs:
+  ui:
+    if: "!contains(github.event.head_commit.message, '[skip cacem ui]')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply UI shell
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='/* CACEM_PRO_UI_V1 */'
+          if marker not in s:
+            css='''<style>/* CACEM_PRO_UI_V1 */\n:root{--nav:#15243a;--nav2:#1e304b;--blue:#1877f2;--line:#d9e2ee;--bg:#f3f7fb}\nbody{background:var(--bg)!important;font-family:Inter,Arial,sans-serif!important;overflow-x:hidden}\nheader{position:fixed!important;left:0;top:0;width:100%;height:58px!important;z-index:20;background:linear-gradient(90deg,#15243a,#213752)!important;color:#fff!important;border:0!important;padding:0 28px 0 24px!important;display:flex;align-items:center;box-shadow:0 2px 12px #10203333;font-size:21px!important}\n.cacem-brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:-.3px}.cacem-brand img{width:55px;height:55px;object-fit:contain}.cacem-brand span{white-space:nowrap}.cacem-top-actions{margin-left:auto;display:flex;gap:24px;align-items:center;font-size:12px;font-weight:600}.cacem-top-actions button{background:none;border:0;color:#fff;cursor:pointer;font:inherit;opacity:.96}.cacem-top-actions button:hover{opacity:1}\n.cacem-side{position:fixed;left:0;top:58px;bottom:0;width:180px;background:linear-gradient(180deg,#16253a,#111d2e);z-index:19;padding:18px 8px}.cac-nav{display:flex;flex-direction:column;gap:5px}.cac-nav button{height:42px;border:0;border-radius:7px;background:transparent;color:#eef5ff;text-align:left;padding:0 13px;font-weight:700;cursor:pointer;font-size:13px}.cac-nav button:hover,.cac-nav button.active{background:#1877f2;color:#fff;box-shadow:0 3px 9px #0b5fc944}.cac-status{position:absolute;bottom:18px;left:13px;color:#9fb0c5;font-size:11px}.cac-status i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#17c964;margin-right:7px}\n.wrap{margin-left:180px!important;max-width:none!important;padding:14px 24px 24px!important;margin-top:58px!important}.bar{display:none!important}.panel{border-color:var(--line)!important;box-shadow:0 2px 10px #2745680d!important;border-radius:10px!important}.cards{grid-template-columns:repeat(6,1fr)!important}.card{background:#fff!important;border-color:var(--line)!important}.layout{grid-template-columns:minmax(620px,1.7fr) minmax(430px,.95fr)!important}.tabs{background:#f8fbff;padding:5px;border-radius:9px}.tab{border:0!important;background:transparent!important}.tab.active{background:#e8f1ff!important;color:#1766cc!important}.canvas,.three{height:620px!important;border-color:var(--line)!important;background:#fff!important}.three{background:linear-gradient(#f9fcff,#eef4fa)!important}.scroll{max-height:430px!important}h2{font-size:16px!important;margin:2px 0 10px!important;color:#18283b}.params{gap:12px}.params label{font-size:11px}.field{height:34px!important;background:#fff}.btn{background:#1877f2!important}.legend{padding-left:4px}.cac-titlebar{display:flex;align-items:center;gap:8px}\n@media(max-width:1050px){.cac-top-actions{display:none}.cac-side{width:64px}.cac-nav button{font-size:0;text-align:center;padding:0}.wrap{margin-left:64px!important}.layout{grid-template-columns:1fr!important}}\n</style>'''
+            s=s.replace('</head>',css+'</head>')
+            js='''<script>\n(function(){\n const old= document.querySelector('header');\n if(old){old.innerHTML='<div class="cacem-brand"><img src="assets/cacem-logo.svg" alt="CACEM"><span>CACEM APP <span style="font-weight:500">— Analisi strutturale CAD</span></span></div><div class="cacem-top-actions"><button id="topLoad">▱ &nbsp;Carica DXF/DWG</button><button id="topParams">⚙ &nbsp;Parametri</button><button id="topCsv">▣ &nbsp;Esporta CSV</button><button id="topTheme">☾</button></div>';}\n const side=document.createElement('aside');side.className='cacem-side';side.innerHTML='<nav class="cac-nav"><button class="active" data-go="analyze">▣ &nbsp; Analizza CAD</button><button data-go="plan">▧ &nbsp; Pianta 2D</button><button data-go="three">◇ &nbsp; Vista 3D</button><button data-go="table">☷ &nbsp; Abaco</button><button data-go="params">⚙ &nbsp; Impostazioni</button><button data-go="help">? &nbsp; Guida</button></nav><div class="cac-status"><i></i>Pronto<br><span style="margin-left:15px">CACEM APP v8.0</span></div>';document.body.appendChild(side);\n const q=id=>document.getElementById(id);\n side.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{side.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');let g=b.dataset.go;if(g==='analyze')q('file')?.click();if(g==='plan'){document.querySelector('[data-tab="plan"]')?.click()}if(g==='three'){document.querySelector('[data-tab="three"]')?.click()}if(g==='table'){q('table')?.scrollIntoView({behavior:'smooth'})}if(g==='params'){q('colH')?.focus()}if(g==='help'){alert('CACEM APP: carica un DXF/DWG, analizza gli elementi e naviga nel modello 3D.');}});\n q('topLoad')?.addEventListener('click',()=>q('file')?.click());q('topCsv')?.addEventListener('click',()=>q('csv')?.click());q('topParams')?.addEventListener('click',()=>q('colH')?.focus());q('topTheme')?.addEventListener('click',()=>document.body.classList.toggle('cac-dark'));\n})();\n</script>'''
+            s=s.replace('</body>',js+'</body>')
+            p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit UI
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Apply CACEM screenshot UI [skip cacem ui]'
+          git push
