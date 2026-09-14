@@ -76,4 +76,5 @@ body>header{position:fixed!important;z-index:100;left:0;top:0;width:100%;height:
  side.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{side.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');let g=b.dataset.go;if(g==='analyze')q('file')?.click();if(g==='plan'){document.querySelector('[data-tab="plan"]')?.click()}if(g==='three'){document.querySelector('[data-tab="three"]')?.click()}if(g==='table'){q('table')?.scrollIntoView({behavior:'smooth'})}if(g==='params'){q('colH')?.focus()}if(g==='help'){alert('CACEM APP: carica un DXF/DWG, analizza gli elementi e naviga nel modello 3D.');}});
  q('topLoad')?.addEventListener('click',()=>q('file')?.click());q('topCsv')?.addEventListener('click',()=>q('csv')?.click());q('topParams')?.addEventListener('click',()=>q('colH')?.focus());q('topTheme')?.addEventListener('click',()=>document.body.classList.toggle('cac-dark'));
 })();
-</script></body></html>
+</script><script src="dxf-loader-fix.js"></script>
+</body></html>
