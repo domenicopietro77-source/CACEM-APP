@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CACEM APP — Analisi strutturale CAD</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f3f5f8;color:#17202a}header{background:#fff;padding:18px 24px;border-bottom:1px solid #ddd;font-size:22px;font-weight:800}.wrap{padding:24px;max-width:1200px;margin:auto}.box{background:#fff;border:1px solid #ddd;border-radius:12px;padding:20px;margin-bottom:18px}button{padding:10px 14px;border:0;border-radius:8px;background:#2457d6;color:#fff;font-weight:700;cursor:pointer}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}#status{margin-top:12px;color:#667085}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px}.big{font-size:28px;font-weight:800}
+</style>
+</head>
+<body>
+<header>🏗️ CACEM APP — Analisi strutturale CAD</header>
+<div class="wrap">
+<div class="box"><h2>Importazione CAD</h2><p>Carica un file DXF per iniziare l'analisi planimetrica.</p><input id="file" type="file" accept=".dxf,.dwg"><div id="status">Nessun file caricato.</div></div>
+<div class="box"><h2>Controllo componenti</h2><div class="grid"><div class="card"><div>Pilastri</div><div class="big">—</div></div><div class="card"><div>Travi</div><div class="big">—</div></div><div class="card"><div>Muri</div><div class="big">—</div></div><div class="card"><div>Solai</div><div class="big">—</div></div><div class="card"><div>Fondazioni</div><div class="big">—</div></div></div><table><thead><tr><th>Controllo</th><th>Stato</th></tr></thead><tbody><tr><td>Duplicati ID</td><td>In attesa</td></tr><tr><td>ID mancanti</td><td>In attesa</td></tr><tr><td>Elementi senza ID</td><td>In attesa</td></tr><tr><td>Componenti non riconosciuti</td><td>In attesa</td></tr></tbody></table></div>
+<div class="box"><h2>Moduli previsti</h2><p>Vista 2D, ricostruzione 3D, lettura ID e attributi CAD, controllo duplicati/mancanti, abaco automatico ed esportazione Excel/CSV/PDF.</p></div>
+</div>
+<script>document.getElementById('file').addEventListener('change',e=>{const f=e.target.files[0];if(f)document.getElementById('status').textContent='File selezionato: '+f.name+' — analisi in preparazione.'});</script>
+</body>
+</html>
