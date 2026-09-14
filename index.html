@@ -3,17 +3,72 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CACEM APP — Analisi strutturale CAD</title>
+<script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.js"></script>
 <style>
-body{font-family:Arial,sans-serif;margin:0;background:#f3f5f8;color:#17202a}header{background:#fff;padding:18px 24px;border-bottom:1px solid #ddd;font-size:22px;font-weight:800}.wrap{padding:24px;max-width:1200px;margin:auto}.box{background:#fff;border:1px solid #ddd;border-radius:12px;padding:20px;margin-bottom:18px}button{padding:10px 14px;border:0;border-radius:8px;background:#2457d6;color:#fff;font-weight:700;cursor:pointer}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}#status{margin-top:12px;color:#667085}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px}.big{font-size:28px;font-weight:800}
-</style>
-</head>
+:root{--bg:#eef2f6;--panel:#fff;--line:#d9e0e8;--ink:#17212b;--muted:#667085;--blue:#2457d6;--red:#c62828;--green:#16803c;--amber:#a15c00}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink)}header{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;font-size:21px;font-weight:800;position:sticky;top:0;z-index:5}.wrap{max-width:1500px;margin:auto;padding:22px}.toolbar,.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 8px #17212b0a}.toolbar{padding:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar input{max-width:420px}.btn{border:0;border-radius:8px;padding:10px 14px;background:var(--blue);color:white;font-weight:700;cursor:pointer}.btn.secondary{background:#e9eef8;color:#173d9c}.btn:disabled{opacity:.45;cursor:not-allowed}.status{margin-left:auto;color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px;margin:16px 0}.card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:15px}.card small{color:var(--muted)}.big{font-size:28px;font-weight:800;margin-top:5px}.layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(360px,.9fr);gap:16px}.panel{padding:16px;margin-bottom:16px}.panel h2{font-size:17px;margin:0 0 13px}.tabs{display:flex;gap:6px;margin-bottom:12px}.tab{padding:9px 13px;border:1px solid var(--line);background:#f7f9fc;border-radius:8px;cursor:pointer;font-weight:700}.tab.active{background:#e9eef8;color:#173d9c}.canvas{height:650px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fafcff;position:relative}.canvas svg{width:100%;height:100%;display:block}.hint{position:absolute;right:12px;top:12px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--muted);font-size:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 7px;border-bottom:1px solid #edf0f3;text-align:left}th{background:#f7f9fc}.ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}.warn{color:var(--amber);font-weight:700}.scroll{max-height:360px;overflow:auto}.empty{padding:30px;text-align:center;color:var(--muted)}.tag{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;background:#eef2f6}.rowbtn{border:0;background:none;color:#2457d6;cursor:pointer;font-weight:700}.details{line-height:1.7;font-size:14px}.details b{display:inline-block;min-width:125px}.notice{padding:12px;border-radius:9px;background:#fff7e6;border:1px solid #f0d69b;color:#744900;font-size:13px;margin-top:10px}@media(max-width:950px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.status{width:100%;margin-left:0}}
+</style></head>
 <body>
 <header>🏗️ CACEM APP — Analisi strutturale CAD</header>
 <div class="wrap">
-<div class="box"><h2>Importazione CAD</h2><p>Carica un file DXF per iniziare l'analisi planimetrica.</p><input id="file" type="file" accept=".dxf,.dwg"><div id="status">Nessun file caricato.</div></div>
-<div class="box"><h2>Controllo componenti</h2><div class="grid"><div class="card"><div>Pilastri</div><div class="big">—</div></div><div class="card"><div>Travi</div><div class="big">—</div></div><div class="card"><div>Muri</div><div class="big">—</div></div><div class="card"><div>Solai</div><div class="big">—</div></div><div class="card"><div>Fondazioni</div><div class="big">—</div></div></div><table><thead><tr><th>Controllo</th><th>Stato</th></tr></thead><tbody><tr><td>Duplicati ID</td><td>In attesa</td></tr><tr><td>ID mancanti</td><td>In attesa</td></tr><tr><td>Elementi senza ID</td><td>In attesa</td></tr><tr><td>Componenti non riconosciuti</td><td>In attesa</td></tr></tbody></table></div>
-<div class="box"><h2>Moduli previsti</h2><p>Vista 2D, ricostruzione 3D, lettura ID e attributi CAD, controllo duplicati/mancanti, abaco automatico ed esportazione Excel/CSV/PDF.</p></div>
+ <div class="toolbar">
+  <input id="file" type="file" accept=".dxf,.dwg">
+  <button class="btn" id="analyze">Analizza CAD</button>
+  <button class="btn secondary" id="csv" disabled>Esporta CSV</button>
+  <button class="btn secondary" id="reset">Azzera</button>
+  <div class="status" id="status">Nessun file caricato.</div>
+ </div>
+ <div class="notice">DXF: analisi locale attiva nel browser, con lettura di INSERT, polilinee, layer e attributi. DWG: il formato viene accettato nell'interfaccia ma richiede il motore DWG dedicato lato server per una lettura CAD completa, che verrà collegata nel modulo successivo.</div>
+ <div class="grid" id="cards"></div>
+ <div class="layout">
+  <section>
+   <div class="panel">
+    <div class="tabs"><button class="tab active" data-tab="plan">Vista 2D</button><button class="tab" data-tab="three">Vista 3D</button><button class="tab" data-tab="check">Controlli</button></div>
+    <div id="plan" class="tabbody"><div class="canvas"><svg id="svg" viewBox="0 0 1000 700"></svg><div class="hint">Rotella = zoom · trascina = pan · clic = selezione</div></div></div>
+    <div id="three" class="tabbody" hidden><div class="empty">Ricostruzione 3D predisposta. Sarà popolata con quote Z/altezze e geometrie solide quando presenti nel CAD.</div></div>
+    <div id="check" class="tabbody" hidden><div class="scroll"><table><thead><tr><th>Controllo</th><th>Risultato</th></tr></thead><tbody id="checks"></tbody></table></div></div>
+   </div>
+  </section>
+  <aside>
+   <div class="panel"><h2>Abaco componenti</h2><div class="scroll"><table><thead><tr><th>ID CAD</th><th>Tipo</th><th>N.</th><th>Sezione</th><th>Layer</th></tr></thead><tbody id="table"></tbody></table></div></div>
+   <div class="panel"><h2>Elemento selezionato</h2><div id="details" class="details"><div class="empty">Seleziona un elemento nella planimetria o nell'abaco.</div></div></div>
+  </aside>
+ </div>
 </div>
-<script>document.getElementById('file').addEventListener('change',e=>{const f=e.target.files[0];if(f)document.getElementById('status').textContent='File selezionato: '+f.name+' — analisi in preparazione.'});</script>
-</body>
-</html>
+<script>
+let state={file:null,elements:[],selected:null,svgScale:1,svgX:0,svgY:0};
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function classify(layer='',block=''){let s=(layer+' '+block).toUpperCase();if(/PILAST|PILLAR|COLUMN|PILASTRO/.test(s))return'Pilastri';if(/TRAV|BEAM|TRAVE/.test(s))return'Travi';if(/MUR|WALL|PARETE/.test(s))return'Muri';if(/SOLAI|SLAB|FLOOR/.test(s))return'Solai';if(/FOND|FOUND|FOOT/.test(s))return'Fondazioni';return'Non riconosciuto'}
+function attrId(ins){let a=ins.attributes||[];for(const x of a){let tag=String(x.tag||x.prompt||'').toUpperCase();let v=String(x.text||x.value||x.textValue||'').trim();if(v&&(/^(ID|NUM|NUMERO|MARK|POS|PIL|TR|M|COD)/.test(tag)||/ID|NUM|MARK|COD/.test(tag)))return v}return ''}
+function polyPoints(e){let p=e.vertices||e.points||[];return p.map(v=>({x:Number(v.x??v[0]??0),y:Number(v.y??v[1]??0)}))}
+function centroid(points){let x=0,y=0;for(const p of points){x+=p.x;y+=p.y}return points.length?{x:x/points.length,y:y/points.length}:{x:0,y:0}}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function analyzeDXF(text,name){
+ const parser=new window.DxfParser();const d=parser.parseSync(text);let out=[];
+ const blocks=d.blocks||{};const entities=d.entities||[];
+ for(let i=0;i<entities.length;i++){
+  const ins=entities[i];if(String(ins.type).toUpperCase()!=='INSERT')continue;
+  const block=blocks[ins.name]||{};const local=[];for(const e of (block.entities||[])){let typ=String(e.type).toUpperCase();if(typ==='LWPOLYLINE'||typ==='POLYLINE'){const pts=polyPoints(e);if(pts.length>=3)local.push(pts)}}
+  if(!local.length)continue;
+  const pts=local[0].map(p=>({x:p.x+Number(ins.position?.x||0),y:p.y+Number(ins.position?.y||0)}));
+  const c=centroid(pts);const layer=ins.layer||block.layer||local[0].layer||'';const type=classify(layer,ins.name);const id=attrId(ins)||String(ins.name||'').replace(/^\*/,'');
+  const closed=pts.length>2&&dist(pts[0],pts[pts.length-1])<1e-6;if(!closed)pts.push({...pts[0]});
+  let area=0;for(let j=0;j<pts.length-1;j++)area+=pts[j].x*pts[j+1].y-pts[j+1].x*pts[j].y;area=Math.abs(area)/2;
+  const minx=Math.min(...pts.map(p=>p.x)),maxx=Math.max(...pts.map(p=>p.x)),miny=Math.min(...pts.map(p=>p.y)),maxy=Math.max(...pts.map(p=>p.y));
+  out.push({uid:'E'+(i+1),id,type,layer,block:ins.name||'',x:Number(ins.position?.x||c.x),y:Number(ins.position?.y||c.y),points:pts,area,w:maxx-minx,h:maxy-miny,attrs:ins.attributes||[]});
+ }
+ // fallback: recognize standalone closed polylines when no INSERTs were found
+ if(!out.length){for(let i=0;i<entities.length;i++){const e=entities[i];let typ=String(e.type).toUpperCase();if(typ!=='LWPOLYLINE'&&typ!=='POLYLINE')continue;const pts=polyPoints(e);if(pts.length<3)continue;const layer=e.layer||'';const c=centroid(pts);let area=0;for(let j=0;j<pts.length;j++){const a=pts[j],b=pts[(j+1)%pts.length];area+=a.x*b.y-b.x*a.y}out.push({uid:'E'+(i+1),id:'',type:classify(layer,''),layer,block:'',x:c.x,y:c.y,points:pts,area:Math.abs(area)/2,w:Math.max(...pts.map(p=>p.x))-Math.min(...pts.map(p=>p.x)),h:Math.max(...pts.map(p=>p.y))-Math.min(...pts.map(p=>p.y)),attrs:e.attributes||[]})}}
+ return {entities:out,version:d.header?.$ACADVER||'DXF'};
+}
+function renderCards(){const counts={Pilastri:0,Travi:0,Muri:0,Solai:0,Fondazioni:0,'Non riconosciuto':0};state.elements.forEach(e=>counts[e.type]=(counts[e.type]||0)+1);$('cards').innerHTML=['Pilastri','Travi','Muri','Solai','Fondazioni','Non riconosciuto'].map(k=>`<div class="card"><small>${k}</small><div class="big">${counts[k]||0}</div></div>`).join('')}
+function renderChecks(){const ids=state.elements.map(e=>e.id).filter(Boolean);const freq={};ids.forEach(x=>freq[x]=(freq[x]||0)+1);const dup=Object.entries(freq).filter(([,n])=>n>1);const missing=state.elements.filter(e=>!e.id).length;const unrec=state.elements.filter(e=>e.type==='Non riconosciuto').length;const rows=[['Elementi analizzati',state.elements.length,'ok'],['ID duplicati',dup.length?dup.map(x=>x[0]+' ×'+x[1]).join(', '):'Nessuno',dup.length?'bad':'ok'],['Elementi senza ID',missing,missing?'bad':'ok'],['Componenti non riconosciuti',unrec,unrec?'warn':'ok'],['Componenti riconosciuti',state.elements.length-unrec,'ok']];$('checks').innerHTML=rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="${r[2]}">${esc(r[1])}</td></tr>`).join('')}
+function renderTable(){let groups={};state.elements.forEach(e=>{let key=e.id||'(senza ID)';if(!groups[key])groups[key]={e,n:0};groups[key].n++});$('table').innerHTML=Object.entries(groups).map(([id,g])=>`<tr><td>${esc(id)}</td><td><span class="tag">${esc(g.e.type)}</span></td><td>${g.n}</td><td>${g.e.w.toFixed(3)} × ${g.e.h.toFixed(3)}</td><td>${esc(g.e.layer)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nessun elemento trovato</td></tr>'}
+function renderSVG(){const svg=$('svg');svg.innerHTML='';if(!state.elements.length)return;let all=state.elements.flatMap(e=>e.points),minx=Math.min(...all.map(p=>p.x)),maxx=Math.max(...all.map(p=>p.x)),miny=Math.min(...all.map(p=>p.y)),maxy=Math.max(...all.map(p=>p.y));const pad=Math.max((maxx-minx),(maxy-miny))*.08||1;minx-=pad;maxx+=pad;miny-=pad;maxy+=pad;const W=1000,H=700;const sx=W/(maxx-minx),sy=H/(maxy-miny),sc=Math.min(sx,sy);const tx=p=>50+(p.x-minx)*sc,ty=p=>H-50-(p.y-miny)*sc;for(const e of state.elements){const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.style.cursor='pointer';g.dataset.uid=e.uid;const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');poly.setAttribute('points',e.points.map(p=>`${tx(p)},${ty(p)}`).join(' '));poly.setAttribute('fill',e.uid===state.selected?'#2457d633':'#2457d61a');poly.setAttribute('stroke',e.uid===state.selected?'#c62828':'#2457d6');poly.setAttribute('stroke-width',e.uid===state.selected?'4':'2');g.appendChild(poly);const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',tx({x:e.x,y:e.y}));t.setAttribute('y',ty({x:e.x,y:e.y}));t.setAttribute('text-anchor','middle');t.setAttribute('font-size','14');t.setAttribute('font-weight','700');t.textContent=e.id||e.uid;g.appendChild(t);g.addEventListener('click',()=>select(e.uid));svg.appendChild(g)}}
+function select(uid){state.selected=uid;const e=state.elements.find(x=>x.uid===uid);if(!e)return;$('details').innerHTML=`<div><b>ID CAD:</b> ${esc(e.id||'MANCANTE')}</div><div><b>Tipo:</b> ${esc(e.type)}</div><div><b>Layer:</b> ${esc(e.layer||'—')}</div><div><b>Blocco:</b> ${esc(e.block||'—')}</div><div><b>Posizione:</b> X ${e.x.toFixed(3)} · Y ${e.y.toFixed(3)}</div><div><b>Dimensioni:</b> ${e.w.toFixed(3)} × ${e.h.toFixed(3)}</div><div><b>Area:</b> ${e.area.toFixed(4)} u²</div><div><b>Attributi:</b> ${e.attrs.length}</div>`;renderSVG()}
+$('file').addEventListener('change',e=>{state.file=e.target.files[0]||null;if(state.file)$('status').textContent=`Pronto: ${state.file.name}. Premi “Analizza CAD”.`});
+$('analyze').addEventListener('click',async()=>{if(!state.file)return alert('Seleziona prima un file DXF.');if(!/\.dxf$/i.test(state.file.name)){alert('Per ora il motore CAD browser analizza direttamente il DXF. Il connettore DWG completo sarà aggiunto nel backend.');return}try{$('status').textContent='Analisi DXF in corso…';const text=await state.file.text();const r=analyzeDXF(text,state.file.name);state.elements=r.entities;state.selected=null;renderCards();renderChecks();renderTable();renderSVG();$('csv').disabled=!state.elements.length;$('status').textContent=`Analisi completata: ${state.elements.length} componenti rilevati.`}catch(err){console.error(err);$('status').textContent='Errore durante la lettura DXF.';alert('Il DXF non è stato interpretato correttamente: '+err.message)}});
+$('csv').addEventListener('click',()=>{const head='ID;Tipo;Layer;X;Y;Larghezza;Altezza;Area;Blocco\n';const body=state.elements.map(e=>[e.id,e.type,e.layer,e.x,e.y,e.w,e.h,e.area,e.block].map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([head+body],{type:'text/csv;charset=utf-8'}));a.download='CACEM_abaco.csv';a.click()});
+$('reset').addEventListener('click',()=>location.reload());document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tabbody').forEach(x=>x.hidden=true);b.classList.add('active');$(b.dataset.tab).hidden=false}));
+</script></body></html>
