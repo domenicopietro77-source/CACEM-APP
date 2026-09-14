@@ -81,7 +81,7 @@ renderCards?.();renderAbaco?.();renderSVG();sectionsUI();paramsUI();categoryInfo
       f.dataset.cacemDxfFix='1';
       f.onchange=function(e){
         var file=e.target.files&&e.target.files[0];if(!file)return;
-        if(!/\\.dxf$/i.test(file.name)){st('Seleziona un file DXF. Il DWG richiede un motore DWG dedicato.',true);return}
+        if(!/\.dxf$/i.test(file.name)){st('Seleziona un file DXF. Il DWG richiede un motore DWG dedicato.',true);return}
         st('Lettura DXF in corso: '+file.name+' …');
         var r=new FileReader();
         r.onerror=function(){st('Errore nella lettura del file DXF.',true)};
