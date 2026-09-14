@@ -1,36 +1,3 @@
 window.CACEM={S:JSON.parse(localStorage.cacemSections||'null')||{TL:{name:'TL — Trave',poly:[[0,0],[.5,0],[.5,.3],[.32,.3],[.32,.6],[0,.6]],b:.5,h:.6,d:0},M:{name:'M — Mensola trave',poly:[[0,0],[-.35,0],[-.35,-.4],[0,-.5]],b:.35,h:.5,d:.5},MT:{name:'MT — Mensola solaio',poly:[[0,.3],[-.2,.3],[-.2,0],[0,0]],b:.2,h:.3,d:.2}},E:[],H:JSON.parse(localStorage.cacemHeights||'{}'),scene:null};
 (()=>{const C=CACEM,$=id=>document.getElementById(id),N=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d,P=v=>Array.isArray(v)?{x:N(v[0]),y:N(v[1])}:{x:N(v?.x??v?.[0]),y:N(v?.y??v?.[1])};function bb(a){return{a:Math.min(...a.map(p=>p.x)),b:Math.max(...a.map(p=>p.x)),c:Math.min(...a.map(p=>p.y)),d:Math.max(...a.map(p=>p.y))}}function tr(q,i){q=P(q);let r=N(i.rotation)*Math.PI/180,x=q.x*N(i.xScale,1),y=q.y*N(i.yScale,1);return{x:N(i.position?.x)+x*Math.cos(r)-y*Math.sin(r),y:N(i.position?.y)+x*Math.sin(r)+y*Math.cos(r)}}function gid(i){return(i.attributes||[]).find(a=>String(a.tag).toUpperCase()==='ID')?.text?.trim()||''}function parse(t){let d=new DxfParser().parseSync(t),o=[];for(let i of d.entities||[]){if(String(i.type).toUpperCase()!=='INSERT')continue;let ch=d.blocks?.[i.name]?.entities||[],lay=String(i.layer||ch.find(e=>e.layer&&e.layer!=='0')?.layer||''),id=gid(i),u=(lay+' '+i.name+' '+id).toUpperCase(),ty='Non riconosciuto';if(/MENSOLA SOLAIO|MENSOLE SOLAI/.test(u)||id.toUpperCase()==='MT')ty='Mensole solaio';else if(/MENSOLA TRAVI|MENSOLA TRAVE|CORBEL/.test(u)||/^M\d/.test(id.toUpperCase()))ty='Mensole';else if(/PILAST|COLUMN|COLONNA/.test(u)||/^PP\d/.test(id.toUpperCase()))ty='Pilastri';else if(/TRAV|BEAM/.test(u)||/^(TR|TL)\d/.test(id.toUpperCase()))ty='Travi';else if(/SOLAIO|LASTRA|SLAB/.test(u)||/^LL\d/.test(id.toUpperCase()))ty='Solai';else if(/MUR|WALL|PARETE|SETTO/.test(u)||/^MU\d/.test(id.toUpperCase()))ty='Muri';else if(/FOND|FOUND/.test(u)||/^FO\d/.test(id.toUpperCase()))ty='Fondazioni';let g=[];for(let e of ch){let t=String(e.type).toUpperCase();if(t==='LINE'){let v=e.vertices||e.points||[e.startPoint,e.endPoint];if(v?.length>=2)g.push({k:'l',a:tr(v[0],i),b:tr(v[v.length-1],i)})}else if(t==='LWPOLYLINE'||t==='POLYLINE'){let v=(e.vertices||e.points||[]).map(q=>tr(q,i));if(v.length)g.push({k:'p',v})}}let E={id,type:ty,layer:lay,block:i.name,x:N(i.position?.x),y:N(i.position?.y),g};if(ty==='Pilastri'){let z=g.find(x=>x.k==='p'&&x.v.length>=4);if(z){let q=bb(z.v);E.b=q.b-q.a;E.d=q.d-q.c;E.cx=(q.a+q.b)/2;E.cy=(q.c+q.d)/2}}if(ty==='Travi'){let z=g.filter(x=>x.k==='l').map(x=>({...x,L:Math.hypot(x.b.x-x.a.x,x.b.y-x.a.y)})).sort((a,b)=>b.L-a.L)[0];if(z){E.a=z.a;E.z=z.b;E.L=z.L;E.x=(z.a.x+z.b.x)/2;E.y=(z.a.y+z.b.y)/2;E.ang=Math.atan2(z.b.y-z.a.y,z.b.x-z.a.x)}}if(ty==='Solai'){let v=[];g.filter(x=>x.k==='l').forEach(x=>v.push(x.a,x.b));if(v.length){let q=bb(v);E.w=q.b-q.a;E.L=q.d-q.c;E.cx=(q.a+q.b)/2;E.cy=(q.c+q.d)/2}}o.push(E)}return o}function sections(t){let d=new DxfParser().parseSync(t),s={...C.S};for(let i of d.entities||[]){if(String(i.type).toUpperCase()!=='INSERT')continue;let ch=d.blocks?.[i.name]?.entities||[],e=ch.find(x=>/LWPOLYLINE|POLYLINE/.test(String(x.type)));if(!e)continue;let v=(e.vertices||e.points||[]).map(P);if(v.length<3)continue;let q=bb(v),l=String(i.layer||'').toUpperCase(),x={poly:v.map(p=>[p.x,p.y]),b:q.b-q.a,h:q.d-q.c};if(l.includes('TRAVE'))s.TL={...s.TL,...x};else if(l.includes('MENSOLA TRAVI'))s.M={...s.M,...x};else if(l.includes('MENSOLE SOLAIO')||l.includes('MENSOLA SOLAIO'))s.MT={...s.MT,...x}}C.S=s;localStorage.cacemSections=JSON.stringify(s);renderSections();render3D();$('status').textContent='SEZIONI caricato: profili associati e memorizzati'}C.parse=parse;C.sections=sections;window.addEventListener('load',()=>{$('sectionGrid')&&renderSections()})})();
-
-/* Robust DXF file-input binding. Runs after the other CACEM scripts so no older handler can replace it. */
-(()=>{
-  const $=id=>document.getElementById(id);
-  const status=(m,bad=false)=>{const s=$('status');if(s)s.textContent=m;const d=$('statusDot');if(d)d.style.color=bad?'#d33':'#19a05d'};
-  function bind(){
-    const fi=$('fileInput'); if(!fi)return;
-    fi.setAttribute('accept','.dxf');
-    fi.onchange=ev=>{
-      const f=ev.target.files?.[0]; ev.target.value=''; if(!f)return;
-      if(!/\.dxf$/i.test(f.name)){status('Seleziona un file DXF. Per il DWG serve il motore DWG dedicato.',true);return;}
-      status('Lettura DXF in corso…');
-      const r=new FileReader();
-      r.onerror=()=>status('Errore nella lettura del file DXF.',true);
-      r.onload=()=>{try{
-        if(typeof DxfParser!=='function')throw new Error('Libreria DXF non disponibile: ricarica la pagina.');
-        const text=String(r.result||''); if(!text.trim())throw new Error('Il file DXF è vuoto.');
-        C.CACEM.E=C.CACEM.parse(text); C.CACEM.file=f.name;
-        if(typeof window.renderCards==='function')window.renderCards();
-        if(typeof window.renderAbaco==='function')window.renderAbaco();
-        if(typeof window.renderParams==='function')window.renderParams();
-        if(typeof window.renderSVG==='function')window.renderSVG();
-        if(typeof window.render3D==='function')window.render3D();
-        const mn=$('modelName');if(mn)mn.textContent=f.name;
-        status(`DXF caricato: ${f.name} · ${C.CACEM.E.length} elementi riconosciuti`);
-      }catch(e){console.error(e);status('Errore DXF: '+(e?.message||e),true)}};
-      r.readAsText(f,'UTF-8');
-    };
-    const open=()=>fi.click();
-    ['chooseBtn','loadBtn','topLoad'].forEach(id=>{const b=$(id);if(b)b.onclick=open;});
-  }
-  if(document.readyState==='loading')window.addEventListener('DOMContentLoaded',bind);else bind();
-  window.addEventListener('load',()=>setTimeout(bind,50));
-})();
+(()=>{const $=id=>document.getElementById(id);const status=(m,bad=false)=>{const s=$('status');if(s)s.textContent=m;const d=$('statusDot');if(d)d.style.color=bad?'#d33':'#19a05d'};function bind(){const fi=$('fileInput');if(!fi)return;fi.setAttribute('accept','.dxf');fi.onchange=ev=>{const f=ev.target.files?.[0];ev.target.value='';if(!f)return;if(!/\.dxf$/i.test(f.name)){status('Seleziona un file DXF. Per il DWG serve il motore DWG dedicato.',true);return}status('Lettura DXF in corso…');const r=new FileReader();r.onerror=()=>status('Errore nella lettura del file DXF.',true);r.onload=()=>{try{if(typeof DxfParser!=='function')throw new Error('Libreria DXF non disponibile: ricarica la pagina.');const text=String(r.result||'');if(!text.trim())throw new Error('Il file DXF è vuoto.');C.E=C.parse(text);C.file=f.name;if(typeof window.renderCards==='function')window.renderCards();if(typeof window.renderAbaco==='function')window.renderAbaco();if(typeof window.renderParams==='function')window.renderParams();if(typeof window.renderSVG==='function')window.renderSVG();if(typeof window.render3D==='function')window.render3D();const mn=$('modelName');if(mn)mn.textContent=f.name;status(`DXF caricato: ${f.name} · ${C.E.length} elementi riconosciuti`)}catch(e){console.error(e);status('Errore DXF: '+(e?.message||e),true)}};r.readAsText(f,'UTF-8')};const open=()=>fi.click();['chooseBtn','loadBtn','topLoad'].forEach(id=>{const b=$(id);if(b)b.onclick=open})}if(document.readyState==='loading')window.addEventListener('DOMContentLoaded',bind);else bind();window.addEventListener('load',()=>setTimeout(bind,50))})();
