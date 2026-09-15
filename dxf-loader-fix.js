@@ -25,44 +25,47 @@
   function wire(){
     var fi=input();
     fi.setAttribute('accept','.dxf,.dwg');
-    if(!fi.dataset.cacemFix){
-      fi.dataset.cacemFix='1';
-      fi.addEventListener('change',function(ev){
-        var f=ev.target.files&&ev.target.files[0]; if(!f)return;
-        if(!/\.dxf$/i.test(f.name)){
-          setStatus('Per ora il caricamento geometrico automatico è disponibile per DXF. Il DWG richiede il motore DWG dedicato.',true);
-          return;
-        }
-        setStatus('Lettura DXF in corso: '+f.name+' …');
-        var r=new FileReader();
-        r.onerror=function(){setStatus('Errore nella lettura del file DXF.',true)};
-        r.onload=function(){
-          try{
-            if(typeof window.DxfParser!=='function')throw new Error('Parser DXF non disponibile');
-            var text=String(r.result||''); if(!text.trim())throw new Error('Il file DXF è vuoto');
-            var parsed=new window.DxfParser().parseSync(text);
-            if(!parsed||!parsed.entities)throw new Error('DXF non interpretabile');
-            window.CACEM_LAST_DXF={name:f.name,text:text,parsed:parsed};
-            if(window.CACEM&&typeof window.CACEM.parse==='function'){
-              window.CACEM.E=window.CACEM.parse(text);
-              window.CACEM.file=f.name;
-              if(typeof window.renderCards==='function')window.renderCards();
-              if(typeof window.renderAbaco==='function')window.renderAbaco();
-              if(typeof window.renderParams==='function')window.renderParams();
-              if(typeof window.renderSections==='function')window.renderSections();
-              if(typeof window.renderSVG==='function')window.renderSVG();
-              if(typeof window.render3D==='function')window.render3D();
-              var mn=document.getElementById('modelName');if(mn)mn.textContent=f.name;
-              setStatus('DXF caricato correttamente: '+f.name+' · '+window.CACEM.E.length+' elementi strutturali riconosciuti');
-            }else{
-              setStatus('DXF letto correttamente, ma il motore CACEM non è disponibile.',true);
-            }
-          }catch(e){console.error(e);setStatus('Errore DXF: '+(e&&e.message?e.message:e),true)}
-          fi.value='';
-        };
-        r.readAsText(f,'UTF-8');
-      });
-    }
+    /* IMPORTANT: use onchange, not addEventListener. The old CACEM loader
+       also touches fileInput and used to clear the FileList before our
+       listener could read it. This handler is deliberately re-installed
+       after page load so it wins over the legacy binding. */
+    fi.onchange=function(ev){
+      var f=ev.target.files&&ev.target.files[0]; if(!f)return;
+      if(!/\.dxf$/i.test(f.name)){
+        setStatus('Per ora il caricamento geometrico automatico è disponibile per DXF. Il DWG richiede il motore DWG dedicato.',true);
+        fi.value='';
+        return;
+      }
+      setStatus('Lettura DXF in corso: '+f.name+' …');
+      var r=new FileReader();
+      r.onerror=function(){setStatus('Errore nella lettura del file DXF.',true);fi.value='';};
+      r.onload=function(){
+        try{
+          if(typeof window.DxfParser!=='function')throw new Error('Parser DXF non disponibile');
+          var text=String(r.result||''); if(!text.trim())throw new Error('Il file DXF è vuoto');
+          var parsed=new window.DxfParser().parseSync(text);
+          if(!parsed||!parsed.entities)throw new Error('DXF non interpretabile');
+          window.CACEM_LAST_DXF={name:f.name,text:text,parsed:parsed};
+          if(window.CACEM&&typeof window.CACEM.parse==='function'){
+            var elements=window.CACEM.parse(text);
+            window.CACEM.E=Array.isArray(elements)?elements:[];
+            window.CACEM.file=f.name;
+            var mn=document.getElementById('modelName');if(mn)mn.textContent=f.name;
+            if(typeof window.renderCards==='function')window.renderCards();
+            if(typeof window.renderAbaco==='function')window.renderAbaco();
+            if(typeof window.renderParams==='function')window.renderParams();
+            if(typeof window.renderSections==='function')window.renderSections();
+            if(typeof window.renderSVG==='function')window.renderSVG();
+            if(typeof window.render3D==='function')window.render3D();
+            setStatus('DXF caricato correttamente: '+f.name+' · '+window.CACEM.E.length+' elementi strutturali riconosciuti');
+          }else{
+            setStatus('DXF letto correttamente, ma il motore CACEM non è disponibile.',true);
+          }
+        }catch(e){console.error(e);setStatus('Errore DXF: '+(e&&e.message?e.message:e),true)}
+        fi.value='';
+      };
+      r.readAsText(f,'UTF-8');
+    };
     ['chooseBtn','loadBtn','topLoad','cacLoad'].forEach(function(id){
       var b=document.getElementById(id); if(b&&!b.dataset.cacemUploadFix){b.dataset.cacemUploadFix='1';b.onclick=function(ev){ev.preventDefault();open()};}
     });
@@ -70,5 +73,5 @@
   }
   function start(){ensureParser(function(){wire();setTimeout(wire,100);setTimeout(wire,500);});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
-  window.addEventListener('load',function(){setTimeout(start,50)});
+  window.addEventListener('load',function(){setTimeout(start,50);setTimeout(wire,250)});
 })();
