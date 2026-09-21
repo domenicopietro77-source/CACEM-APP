@@ -1,55 +1,26 @@
-const V=document.querySelector('#viewport');
-const state={bays:4,spacing:600,depth:1800,height:750,pluviale:true,selected:'PP2-01'};
-let scene,camera,renderer,controls,model;
-function init(){
-  scene=new THREE.Scene(); scene.background=new THREE.Color(0xe9edf0);
-  camera=new THREE.PerspectiveCamera(38,1,1,20000); renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2)); V.appendChild(renderer.domElement);
-  scene.add(new THREE.HemisphereLight(0xffffff,0x75808a,1.8));
-  const light=new THREE.DirectionalLight(0xffffff,2.3); light.position.set(2500,4000,1800); scene.add(light);
-  model=new THREE.Group(); scene.add(model);
-  controls=new THREE.OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.08;
-  window.addEventListener('resize',resize); resize(); rebuild(); animate();
-}
-function mat(c){return new THREE.MeshStandardMaterial({color:c,roughness:.62,metalness:.06})}
-function pillar(x,z,id){
-  const g=new THREE.Group(); g.userData={id,type:'PP2'};
-  const body=new THREE.Mesh(new THREE.BoxGeometry(60,60,state.height),mat(0x9da5ab)); body.position.y=state.height/2; g.add(body);
-  if(state.pluviale){const p=new THREE.Mesh(new THREE.CylinderGeometry(6,6,state.height*.9,14),mat(0x30373d));p.position.set(0, state.height*.45, 26);g.add(p)}
-  g.position.set(x,0,z); return g;
-}
-function beam(x,z){
-  const g=new THREE.Group(); const b=new THREE.Mesh(new THREE.BoxGeometry(state.spacing,55,65),mat(0x5e6871)); b.position.set(state.spacing/2,state.height,0); g.add(b); g.position.set(x,0,z); return g;
-}
-function rebuild(){
-  while(model.children.length)model.remove(model.children[0]);
-  for(let i=0;i<=state.bays;i++)model.add(pillar(i*state.spacing,0,'PP2-'+String(i+1).padStart(2,'0')));
-  for(let i=0;i<state.bays;i++)model.add(beam(i*state.spacing,0));
-  model.rotation.y=-.52; model.rotation.x=-.05; fit();
-  document.querySelector('#baysOut').textContent=state.bays;
-  document.querySelector('#pillarsOut').textContent=state.bays+1;
-  document.querySelector('#beamsOut').textContent=state.bays;
-}
-function fit(){
-  const box=new THREE.Box3().setFromObject(model), c=box.getCenter(new THREE.Vector3()), s=box.getSize(new THREE.Vector3()), m=Math.max(s.x,s.y,s.z,1);
-  camera.position.set(c.x+m*1.7,c.y+m*1.35,c.z+m*1.55); controls.target.copy(c); controls.update();
-}
-function resize(){const r=V.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const state={bays:4,spacing:600,depth:1800,height:750,levels:[0],items:[],selected:null,view:'3d',grid:true,snap:true,mode:'select',history:[]};
+let scene,camera,renderer,controls,root,gridHelper,raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2(),drag=false;
+const mat={pillar:new THREE.MeshStandardMaterial({color:0xb8bec2,roughness:.72}),beam:new THREE.MeshStandardMaterial({color:0x8d969c,roughness:.7}),floor:new THREE.MeshStandardMaterial({color:0xcbd1d5,roughness:.85,transparent:true,opacity:.72}),roof:new THREE.MeshStandardMaterial({color:0x707b82,roughness:.8}),select:new THREE.MeshStandardMaterial({color:0xe31b23,roughness:.5})};
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color(0xdfe4e7);camera=new THREE.PerspectiveCamera(42,1,1,100000);renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));$('#viewport').appendChild(renderer.domElement);controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;scene.add(new THREE.HemisphereLight(0xffffff,0x68747c,1.8));let dl=new THREE.DirectionalLight(0xffffff,1.4);dl.position.set(5000,8000,5000);scene.add(dl);root=new THREE.Group();scene.add(root);buildModel();resize();window.addEventListener('resize',resize);renderer.domElement.addEventListener('pointerdown',pick);animate();updateLevels();}
+function pillarGeo(){return new THREE.BoxGeometry(60,state.height,60)}
+function beamGeo(len){return new THREE.BoxGeometry(Math.max(20,len),40,50)}
+function addMesh(item){let o;if(item.type==='PP2'){o=new THREE.Mesh(pillarGeo(),mat.pillar);o.position.set(item.x,state.height/2+item.z,item.y)}else if(item.type==='TL'){o=new THREE.Mesh(beamGeo(item.len),mat.beam);o.position.set(item.x,item.z+state.height,item.y);o.rotation.y=item.rot*Math.PI/180}else if(item.type==='FLOOR'){o=new THREE.Mesh(new THREE.BoxGeometry(state.bays*state.spacing+60,18,state.depth),mat.floor);o.position.set((state.bays*state.spacing)/2, item.z,0)}else if(item.type==='ROOF'){o=new THREE.Mesh(new THREE.BoxGeometry(state.bays*state.spacing+60,18,state.depth),mat.roof);o.position.set((state.bays*state.spacing)/2,item.z,0)}else return;o.userData.id=item.id;o.userData.type=item.type;root.add(o);item.object=o}
+function buildModel(){while(root.children.length)root.remove(root.children[0]);state.items=[];for(let r=0;r<2;r++)for(let i=0;i<=state.bays;i++)state.items.push({id:'PP2-'+r+'-'+i,type:'PP2',x:i*state.spacing,y:r*state.depth,z:0,pluviale:true});for(let r=0;r<2;r++)for(let i=0;i<state.bays;i++)state.items.push({id:'TL-'+r+'-'+i,type:'TL',x:i*state.spacing+state.spacing/2,y:r*state.depth,z:0,len:state.spacing,rot:0});state.levels.forEach((z,n)=>{if(n>0)state.items.push({id:'FLOOR-'+n,type:'FLOOR',x:0,y:0,z})});state.items.push({id:'ROOF-1',type:'ROOF',x:0,y:0,z:state.height});state.items.forEach(addMesh);makeGrid();updateMetrics();select(null)}
+function makeGrid(){if(gridHelper)scene.remove(gridHelper);if(!state.grid)return;gridHelper=new THREE.GridHelper(Math.max(state.bays*state.spacing,state.depth)*1.2,Math.max(10,state.bays*2),0x9ba5aa,0xc5cdd1);gridHelper.rotation.x=0;gridHelper.position.set((state.bays*state.spacing)/2,0,state.depth/2);scene.add(gridHelper)}
+function updateMetrics(){$('#mBays').textContent=state.bays;$('#mPillars').textContent=state.items.filter(x=>x.type==='PP2').length;$('#mBeams').textContent=state.items.filter(x=>x.type==='TL').length;$('#mLevels').textContent=state.levels.length}
+function resize(){let v=$('#viewport'),w=v.clientWidth,h=v.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+function fit(){let box=new THREE.Box3().setFromObject(root),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3()),d=Math.max(s.x,s.y,s.z)*1.45;camera.position.set(c.x+d,c.y+d*.75,c.z+d);controls.target.copy(c);controls.update()}
+function view(v){state.view=v;let cx=state.bays*state.spacing/2,cy=state.height/2,cz=state.depth/2,d=Math.max(state.bays*state.spacing,state.depth,state.height)*1.5; if(v==='plan'){camera.position.set(cx,d,cz);controls.target.set(cx,0,cz)}else if(v==='front'||v==='section'){camera.position.set(cx,cy,d);controls.target.set(cx,cy,0)}else if(v==='roof'){camera.position.set(cx,d,cz);controls.target.set(cx,state.height,cz)}else{camera.position.set(cx+d*.8,cy+d*.55,cz+d*.8);controls.target.set(cx,cy,cz)}controls.update();$('#viewBadge').textContent=v==='3d'?'MODELLO 3D':v.toUpperCase()}
+function snap(v){return state.snap?Math.round(v/10)*10:v}
+function pick(e){if(state.mode!=='select')return;let r=renderer.domElement.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(mouse,camera);let hits=raycaster.intersectObjects(root.children,false);select(hits.length?hits[0].object.userData.id:null)}
+function select(id){state.selected=id;root.children.forEach(o=>o.material=(o.userData.id===id?mat.select:mat[o.userData.type==='PP2'?'pillar':o.userData.type==='TL'?'beam':o.userData.type.toLowerCase()]));let it=state.items.find(x=>x.id===id);$('#emptySel').hidden=!!it;$('#props').hidden=!it;if(it){$('#selName').textContent=it.id+' · '+it.type;$('#px').value=Math.round(it.x);$('#py').value=Math.round(it.y);$('#pz').value=Math.round(it.z);$('#prot').value=Math.round(it.rot||0);$('#pluv').checked=it.pluviale!==false}}
+function applyProps(){let it=state.items.find(x=>x.id===state.selected);if(!it)return;it.x=snap(+$('#px').value);it.y=snap(+$('#py').value);it.z=+$('#pz').value;it.rot=+$('#prot').value;it.pluviale=$('#pluv').checked;rebuildPreserve()}
+function rebuildPreserve(){let old=state.items.map(x=>({...x,object:null}));while(root.children.length)root.remove(root.children[0]);state.items=old;state.items.forEach(addMesh);makeGrid();select(state.selected);updateMetrics()}
+function add(type){let id=type+'-'+Date.now();let item;if(type==='PP2')item={id,type,x:state.bays*state.spacing/2,y:state.depth/2,z:0,pluviale:true};if(type==='TL')item={id,type,x:state.bays*state.spacing/2,y:state.depth/2,z:0,len:state.spacing,rot:0};if(type==='FLOOR'){let z=state.height*.5;state.levels.push(z);item={id,type,x:0,y:0,z}}if(type==='ROOF')item={id,type,x:0,y:0,z:state.height};state.items.push(item);addMesh(item);select(id);updateMetrics();updateLevels()}
+function addLevel(){let z=state.levels.length?Math.max(...state.levels)+250:250;if(z>=state.height)z=state.height-50;state.levels.push(z);state.items.push({id:'FLOOR-'+Date.now(),type:'FLOOR',x:0,y:0,z});rebuildPreserve();updateLevels()}
+function updateLevels(){$('#levels').innerHTML=state.levels.map((z,i)=>'<div class="level"><span>Livello '+i+'</span><b>'+Math.round(z)+' cm</b></div>').join('')}
+function exportDXF(){let L=['0','SECTION','2','ENTITIES'];const line=(a,b)=>L.push('0','LINE','8','CACEM-GENERATO','10',a[0],'20',a[1],'30',a[2],'11',b[0],'21',b[1],'31',b[2]);state.items.forEach(it=>{if(it.type==='PP2'){let x=it.x,y=it.y,s=30;line([x-s,y-s,0],[x+s,y-s,0]);line([x+s,y-s,0],[x+s,y+s,0]);line([x+s,y+s,0],[x-s,y+s,0]);line([x-s,y+s,0],[x-s,y-s,0])}else if(it.type==='TL'){let a=it.x-it.len/2,b=it.x+it.len/2;line([a,it.y,0],[b,it.y,0])}});L.push('0','ENDSEC','0','EOF');let blob=new Blob([L.join('\n')],{type:'application/dxf'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='CACEM_modello.dxf';a.click();URL.revokeObjectURL(a.href);$('#status').textContent='DXF esportato'}
+function applyGrid(){state.bays=+$('#bays').value;state.spacing=+$('#spacing').value;state.depth=+$('#depth').value;state.height=+$('#height').value;state.levels=[0];buildModel();fit();$('#status').textContent='Maglia aggiornata'}
 function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}
-function view(kind){
-  if(kind==='top'){camera.position.set(0,Math.max(1500,state.depth*1.1),1);controls.target.set(state.bays*state.spacing/2,0,0)}
-  if(kind==='front'){camera.position.set(state.bays*state.spacing*1.2,Math.max(450,state.height*.75),state.bays*state.spacing*1.8);controls.target.set(state.bays*state.spacing/2,state.height/2,0)}
-  if(kind==='side'){camera.position.set(1,Math.max(500,state.height*.7),state.depth*1.4);controls.target.set(0,state.height/2,0)}
-  if(kind==='orbit'){camera.position.set(state.bays*state.spacing*1.1,state.height*1.9,state.depth*.9)}
-  controls.update()
-}
-document.querySelector('#bays').oninput=e=>{state.bays=Math.max(1,Math.min(20,+e.target.value||1));rebuild()};
-document.querySelector('#spacing').oninput=e=>{state.spacing=Math.max(100,+e.target.value||600);rebuild()};
-document.querySelector('#depth').oninput=e=>{state.depth=Math.max(500,+e.target.value||1800);rebuild()};
-document.querySelector('#height').oninput=e=>{state.height=Math.max(100,+e.target.value||750);rebuild()};
-document.querySelector('#pluviale').onclick=e=>{state.pluviale=!state.pluviale;e.currentTarget.classList.toggle('on',state.pluviale);rebuild()};
-document.querySelector('#fit').onclick=fit;document.querySelector('#home').onclick=fit;document.querySelector('#zoomIn').onclick=()=>camera.position.multiplyScalar(.82);document.querySelector('#zoomOut').onclick=()=>camera.position.multiplyScalar(1.22);
-document.querySelector('#orbit').onclick=()=>view('orbit');document.querySelector('#top').onclick=()=>view('top');document.querySelector('#front').onclick=()=>view('front');document.querySelector('#side').onclick=()=>view('side');
-document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector('#viewName').textContent={model:'Assonometria',plan:'Pianta',section:'Sezione',elevation:'Prospetto',render:'Render'}[b.dataset.mode]||'Assonometria'});
-document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{document.querySelector('#selectedId').textContent=b.dataset.add+'-NUOVO';document.querySelector('#selectedName').textContent=b.dataset.add+(b.dataset.add==='PP2'?' · Pilastro':' · Trave');document.querySelector('#selectedIcon').textContent=b.dataset.add});
-init();
+$$('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));$$('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));$('#applyGrid').onclick=applyGrid;$('#applyProps').onclick=applyProps;$('#addLevel').onclick=addLevel;$('#fit').onclick=fit;$('#grid').onclick=()=>{state.grid=!state.grid;$('#grid').classList.toggle('on',state.grid);makeGrid()};$('#snap').onclick=()=>{state.snap=!state.snap;$('#snap').classList.toggle('on',state.snap)};$('#delete').onclick=()=>{if(!state.selected)return;state.items=state.items.filter(x=>x.id!==state.selected);rebuildPreserve();$('#status').textContent='Elemento eliminato'};$('#modeSelect').onclick=()=>{state.mode='select';$('#modeSelect').classList.add('active');$('#modeMove').classList.remove('active')};$('#modeMove').onclick=()=>{state.mode='move';$('#modeMove').classList.add('active');$('#modeSelect').classList.remove('active')};$('#bays').onchange=()=>{};$('#search').oninput=e=>$$('.libItem').forEach(b=>b.style.display=b.innerText.toLowerCase().includes(e.target.value.toLowerCase())?'flex':'none');$('#dxfInput').onchange=e=>{let f=e.target.files[0];if(f){$('#status').textContent='DXF selezionato: '+f.name+' — parser/catalogo in preparazione';}};$('#export').onclick=exportDXF;$('#save').onclick=()=>{localStorage.cacemModel=JSON.stringify({...state,items:state.items.map(x=>({...x,object:undefined}))});$('#status').textContent='Progetto salvato localmente'};init();setTimeout(fit,100);
