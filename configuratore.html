@@ -1,86 +1,46 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CACEM · Configuratore</title>
-<link rel="stylesheet" href="configuratore.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CACEM CONFIGURATORE</title>
+<link rel="icon" href="cacem-logo.svg"><link rel="stylesheet" href="configuratore.css">
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-<div class="app">
+<div id="app">
 <header class="top">
-  <div class="brand"><img src="cacem-logo.svg"><div><b>CACEM</b><span>STRUCTURAL CONFIGURATOR</span></div></div>
-  <div class="project"><small>PROGETTO</small><strong>Nuovo capannone</strong><span class="live">● LIVE MODEL</span></div>
-  <div class="actions"><button>↶</button><button>↷</button><button class="outline">Salva</button><button class="accent">Esporta</button></div>
+ <div class="brand"><img src="cacem-logo.svg"><div><b>CACEM</b><span>CONFIGURATORE STRUTTURALE</span></div></div>
+ <div class="project"><span class="dot"></span><b id="projectName">Nuovo progetto</b><small>MODELLO CENTRALE</small></div>
+ <div class="topActions"><button id="undo">↶</button><button id="redo">↷</button><button id="save">SALVA</button><button class="primary" id="export">ESPORTA DXF</button></div>
 </header>
 <nav class="tabs">
-  <button class="tab active" data-mode="model">MODELLO</button>
-  <button class="tab" data-mode="plan">PIANTA</button>
-  <button class="tab" data-mode="section">SEZIONE</button>
-  <button class="tab" data-mode="elevation">PROSPETTO</button>
-  <button class="tab" data-mode="render">RENDER</button>
-  <div class="nav-spacer"></div>
-  <button class="tool" id="fit">⌗ Adatta</button><button class="tool">▦ Griglia</button><button class="tool">⊙ Snap</button>
+ <button class="active" data-view="3d">MODELLO 3D</button><button data-view="plan">PIANTA PILASTRI</button><button data-view="floor">INTERPIANO</button><button data-view="roof">COPERTURA</button><button data-view="front">PROSPETTO</button><button data-view="section">SEZIONE</button><button data-view="render">RENDER</button>
 </nav>
 <main>
 <aside class="left">
-  <div class="side-title"><div><small>LIBRERIA CACEM</small><h2>Elementi</h2></div><button>⌕</button></div>
-  <div class="search">Cerca componente <kbd>⌘ K</kbd></div>
-  <div class="group">STRUTTURA</div>
-  <button class="card active" data-add="PP2"><span class="icon pillar"></span><span><b>PP2</b><small>Pilastro prefabbricato</small></span><i>+</i></button>
-  <button class="card" data-add="TL"><span class="icon beam"></span><span><b>TL</b><small>Trave prefabbricata</small></span><i>+</i></button>
-  <div class="group">IN SVILUPPO</div>
-  <div class="card disabled"><span class="icon roof"></span><span><b>Copertura</b><small>Catalogo CACEM</small></span><i>—</i></div>
-  <div class="card disabled"><span class="icon panel"></span><span><b>Tamponamento</b><small>Catalogo CACEM</small></span><i>—</i></div>
-  <div class="library-note"><span>2</span> famiglie caricate · modello parametrico</div>
+ <div class="panelTitle">LIBRERIA CACEM</div><input id="search" class="search" placeholder="Cerca elemento...">
+ <div class="libGroup"><label>PILASTRI</label><button class="libItem" data-add="PP2"><span class="swatch pillar"></span><span><b>PP2</b><small>Pilastro 600 × 600</small></span><i>+</i></button></div>
+ <div class="libGroup"><label>TRAVI</label><button class="libItem" data-add="TL"><span class="swatch beam"></span><span><b>TL</b><small>Trave prefabbricata</small></span><i>+</i></button></div>
+ <div class="libGroup"><label>COMPONENTI</label><button class="libItem" data-add="FLOOR"><span class="swatch floor"></span><span><b>INTERPIANO</b><small>Livello strutturale</small></span><i>+</i></button><button class="libItem" data-add="ROOF"><span class="swatch roof"></span><span><b>COPERTURA</b><small>Livello di copertura</small></span><i>+</i></button></div>
+ <div class="libGroup"><label>IMPORTA GEOMETRIA REALE</label><label class="fileBtn">CARICA DXF CACEM<input id="dxfInput" type="file" accept=".dxf"></label><small class="hint">La geometria DXF fornita dall'utente rimane la sorgente ufficiale del catalogo.</small></div>
 </aside>
-
-<section class="stage">
-  <div class="stage-head"><div><span>MODELLO STRUTTURALE</span><b id="viewName">Assonometria</b></div><div class="view-buttons"><button id="orbit">Orbit</button><button id="top">Top</button><button id="front">Front</button><button id="side">Side</button></div></div>
-  <div id="viewport"></div>
-  <div class="floating left-float"><div><small>CAMPATE</small><strong id="baysOut">4</strong><span>interassi</span></div><div><small>PILASTRI</small><strong id="pillarsOut">5</strong><span>PP2</span></div><div><small>TRAVI</small><strong id="beamsOut">4</strong><span>TL</span></div></div>
-  <div class="floating right-float"><button id="zoomIn">＋</button><button id="zoomOut">−</button><button id="home">⌂</button></div>
-  <div class="axis"><b>X</b><span>Y</span><i>Z</i></div>
+<section class="workspace">
+ <div class="toolbar"><button id="fit">ADATTA</button><button id="grid" class="on">GRIGLIA</button><button id="snap" class="on">SNAP</button><span></span><button id="modeSelect" class="tool active">SELEZIONA</button><button id="modeMove" class="tool">SPOSTA</button><button id="delete" class="danger">ELIMINA</button></div>
+ <div id="viewport"></div>
+ <div id="viewBadge">MODELLO 3D</div>
+ <div class="navCube"><button data-view="3d">3D</button><button data-view="front">FR</button><button data-view="plan">TOP</button><button data-view="section">SEZ</button></div>
+ <div class="metrics"><div><small>CAMPATE</small><b id="mBays">4</b></div><div><small>PILASTRI</small><b id="mPillars">10</b></div><div><small>TRAVI</small><b id="mBeams">8</b></div><div><small>LIVELLI</small><b id="mLevels">1</b></div></div>
 </section>
-
 <aside class="right">
-  <div class="side-title"><div><small>CONFIGURAZIONE</small><h2>Struttura</h2></div><button>⋯</button></div>
-  <div class="config-section">
-    <div class="section-label">MAGLIA STRUTTURALE</div>
-    <label>Numero campate <input id="bays" type="number" min="1" max="20" value="4"></label>
-    <label>Interasse <div class="input-unit"><input id="spacing" type="number" value="600"><span>cm</span></div></label>
-    <label>Profondità <div class="input-unit"><input id="depth" type="number" value="1800"><span>cm</span></div></label>
-  </div>
-  <div class="config-section">
-    <div class="section-label">ELEMENTO SELEZIONATO</div>
-    <div class="selected">
-      <div class="selected-icon" id="selectedIcon">PP2</div>
-      <div><b id="selectedName">PP2 · Pilastro</b><small id="selectedId">PP2-01</small></div>
-    </div>
-    <div class="props">
-      <div><span>Sezione</span><b id="sectionValue">600 × 600 mm</b></div>
-      <div><span>Altezza</span><b><input id="height" value="750"> cm</b></div>
-      <div><span>Rotazione</span><b>0°</b></div>
-    </div>
-  </div>
-  <div class="config-section">
-    <div class="section-label">ACCESSORI PP2</div>
-    <div class="toggle-row"><span>Pluviale</span><button class="toggle on" id="pluviale"><i></i></button></div>
-    <p class="hint">Componente separato, collegato al pilastro e controllato dal modello.</p>
-  </div>
-  <div class="config-section">
-    <div class="section-label">MODELLO</div>
-    <div class="model-row"><span>Unità</span><b>cm</b></div>
-    <div class="model-row"><span>Snap</span><b>Griglia</b></div>
-    <div class="model-row"><span>Stato</span><b class="ok">Sincronizzato</b></div>
-  </div>
-  <button class="delete">⌫ Elimina elemento</button>
+ <div class="panelTitle">CONFIGURAZIONE</div>
+ <div class="section"><label>MAGLIA STRUTTURALE</label><div class="row"><div><small>CAMPATE</small><input id="bays" type="number" min="1" max="40" value="4"></div><div><small>INTERASSE (cm)</small><input id="spacing" type="number" min="100" value="600"></div></div><div class="row"><div><small>PROFONDITÀ (cm)</small><input id="depth" type="number" min="100" value="1800"></div><div><small>ALTEZZA (cm)</small><input id="height" type="number" min="100" value="750"></div></div><button id="applyGrid" class="wide primary">AGGIORNA MAGLIA</button></div>
+ <div class="section"><label>ELEMENTO SELEZIONATO</label><div id="emptySel" class="empty">Nessun elemento selezionato</div><div id="props" hidden><div class="selectedName" id="selName"></div><div class="row"><div><small>X (cm)</small><input id="px" type="number"></div><div><small>Y (cm)</small><input id="py" type="number"></div></div><div class="row"><div><small>Z (cm)</small><input id="pz" type="number"></div><div><small>ROT (°)</small><input id="prot" type="number"></div></div><label class="check"><input id="pluv" type="checkbox"> PLUVIALE PP2</label><button id="applyProps" class="wide">APPLICA</button></div></div>
+ <div class="section"><label>LIVELLI</label><div id="levels"></div><button id="addLevel" class="wide">+ AGGIUNGI INTERPIANO</button></div>
+ <div class="section"><label>UNITÀ</label><div class="unit">cm <span>quotatura DXF</span></div></div>
 </aside>
 </main>
-<footer><span><i></i> Modello sincronizzato</span><span>2 famiglie · PP2 + TL</span><span>Unità <b>cm</b></span><span class="footer-right">CACEM CONFIGURATORE · 0.1</span></footer>
+<footer><span>● MODELLO SINCRONIZZATO</span><span id="status">Pronto</span><span>CACEM · v0.2 · motore strutturale</span></footer>
 </div>
 <script src="configuratore.js"></script>
-</body>
-</html>
+</body></html>
