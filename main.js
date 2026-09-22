@@ -12,7 +12,7 @@ import {
   getStato
 } from './ui.js';
 
-import { initScena3D, aggiornaScena3D, resizeScena3D,
+import { inizializzaScena3D, aggiornaScena3D, resizeScena3D,
          vistaIsometrica, vistaTop, vistaFront, vistaLato, toggleWireframe } from './scena3d.js';
 import { inizializzaPianta, aggiornaPianta, resetPianta } from './pianta.js';
 import { inizializzaProspetti, aggiornaProspetti, resetProspetto } from './prospetti.js';
@@ -63,7 +63,7 @@ export function attivaEditor(statoIniziale) {
   // Se i moduli 3D/2D non sono ancora stati inizializzati, fallo ora
   if (!moduli3DInizializzati) {
     try {
-      initScena3D();
+      inizializzaScena3D();
       inizializzaPianta(document.getElementById('piantaCanvas'));
       inizializzaProspetti();
       inizializzaSezioni();
