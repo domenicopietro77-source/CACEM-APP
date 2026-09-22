@@ -114,7 +114,8 @@ export function calcolaDerivati(s) {
     0
   );
   const W = Number(g.luce || 0);
-  const n = s.campate.length + 1;
+  const numCampate = s.campate.length;
+  const numPilastri = (numCampate + 1) * 2;
 
   const basePilastro = Number(
     s.pilastri.base || DEFAULT_PILASTRO_BASE
@@ -123,80 +124,84 @@ export function calcolaDerivati(s) {
     s.pilastri.altezzaSezione || DEFAULT_PILASTRO_ALTEZZA_SEZIONE
   );
 
-  const t =
-    trovaTrave(s.travi.tipoId) ||
-    trovaTrave("TL");
+  const t = trovaTrave(s.travi.tipoId) || trovaTrave("TL");
+  const k = trovaTegolo(s.copertura.tegoloId) || trovaTegolo("AL");
 
-  const k =
-    trovaTegolo(s.copertura.tegoloId) ||
-    trovaTegolo("AL");
+  const altezzaPilastro = Number(g.altezzaPilastro || 0);
+  const pendenza = Number(g.pendenzaCopertura || 0);
 
-  const vp =
-    (basePilastro * altezzaSezionePilastro / 10000) *
-    g.altezzaPilastro *
-    2 *
-    n;
+  const areaSezionePilastro =
+    (basePilastro / 100) *
+    (altezzaSezionePilastro / 100);
 
-  const vb =
-    2 *
+  const volumePilastri =
+    areaSezionePilastro *
+    altezzaPilastro *
+    numPilastri;
+
+  const volumeTraviBanchina =
     L *
-    t.base *
-    t.altezza /
-    10000;
-
-  const vt =
-    s.campate.length *
-    W *
-    t.base *
-    t.altezza /
-    10000 *
+    (t.base / 100) *
+    (t.altezza / 100) *
     2;
 
-  const f =
+  const volumeTraviTrasversali =
+    numCampate *
+    W *
+    (t.base / 100) *
+    (t.altezza / 100) *
+    2;
+
+  const lunghezzaFalda =
     Math.sqrt(
       (W / 2) ** 2 +
-      (W * g.pendenzaCopertura / 200) ** 2
+      (W * pendenza / 200) ** 2
     );
 
-  const q =
+  const numTegoli =
     Math.max(
       1,
       Math.ceil(L / (k.larghezza || 2.5))
     ) * 2;
 
-  const vc =
-    q *
+  const areaTegolo =
     (k.larghezza || 2.5) *
-    (k.altezza || 0.12) *
-    f;
+    (k.altezza || 0.12);
 
-  const vpan =
-    2 *
-    (L + W) *
-    g.altezzaPilastro *
-    s.pannelli.spessore /
-    100;
+  const volumeTegoli =
+    areaTegolo *
+    lunghezzaFalda *
+    numTegoli;
 
-  const vi =
+  const spessorePannello =
+    Number(s.pannelli.spessore || 0) / 100;
+
+  const perimetro = 2 * (L + W);
+
+  const volumePannelli =
+    perimetro *
+    altezzaPilastro *
+    spessorePannello;
+
+  const volumeInterpiano =
     g.interpiano
       ? L * W * 0.25
       : 0;
 
-  const vf =
-    2 *
-    n *
+  const volumeFondazioni =
+    numPilastri *
     0.9 *
     0.9 *
     0.8;
 
   const total =
-    vp +
-    vb +
-    vt +
-    vc +
-    vpan +
-    vi +
-    vf;
+    volumePilastri +
+    volumeTraviBanchina +
+    volumeTraviTrasversali +
+    volumeTegoli +
+    volumePannelli +
+    volumeInterpiano +
+    volumeFondazioni;
 
   const tipoPilastro =
     String(basePilastro) +
@@ -208,21 +213,21 @@ export function calcolaDerivati(s) {
       "Fondazioni",
       "Fondazione",
       s.pilastri.fondazione,
-      2 * n,
+      numPilastri,
       "0.90×0.90×0.80",
-      vf
+      volumeFondazioni
     ],
     [
       "Pilastri",
       "Pilastri",
       tipoPilastro,
-      2 * n,
+      numPilastri,
       (basePilastro / 100).toFixed(2) +
         "×" +
         (altezzaSezionePilastro / 100).toFixed(2) +
         "×" +
-        g.altezzaPilastro.toFixed(2),
-      vp
+        altezzaPilastro.toFixed(2),
+      volumePilastri
     ],
     [
       "Travi",
@@ -234,37 +239,41 @@ export function calcolaDerivati(s) {
         (t.base / 100).toFixed(2) +
         "×" +
         (t.altezza / 100).toFixed(2),
-      vb
+      volumeTraviBanchina
     ],
     [
       "Travi",
       "Trasversali",
       s.travi.tipoId,
-      2 * s.campate.length,
+      numCampate * 2,
       W.toFixed(2) +
         "×" +
         (t.base / 100).toFixed(2) +
         "×" +
         (t.altezza / 100).toFixed(2),
-      vt
+      volumeTraviTrasversali
     ],
     [
       "Copertura",
       "Tegoli",
       s.copertura.tegoloId,
-      q,
+      numTegoli,
       (k.larghezza || 2.5).toFixed(2) +
         "×" +
-        f.toFixed(2),
-      vc
+        lunghezzaFalda.toFixed(2),
+      volumeTegoli
     ],
     [
       "Pannelli",
       "Tamponamento",
       s.pannelli.tipo,
       1,
-      s.pannelli.spessore + " cm",
-      vpan
+      perimetro.toFixed(2) +
+        "×" +
+        altezzaPilastro.toFixed(2) +
+        "×" +
+        spessorePannello.toFixed(2),
+      volumePannelli
     ]
   ];
 
@@ -277,7 +286,7 @@ export function calcolaDerivati(s) {
       L.toFixed(2) +
         "×" +
         W.toFixed(2),
-      vi
+      volumeInterpiano
     ]);
   }
 
@@ -294,13 +303,13 @@ export function calcolaDerivati(s) {
     lunghezza: L,
     superficie: L * W,
     volumi: {
-      pilastri: vp,
-      traviBanchina: vb,
-      traviTrasversali: vt,
-      tegoli: vc,
-      pannelli: vpan,
-      interpiano: vi,
-      fondazioni: vf,
+      pilastri: volumePilastri,
+      traviBanchina: volumeTraviBanchina,
+      traviTrasversali: volumeTraviTrasversali,
+      tegoli: volumeTegoli,
+      pannelli: volumePannelli,
+      interpiano: volumeInterpiano,
+      fondazioni: volumeFondazioni,
       totale: total
     },
     peso: total * 2.5,
@@ -311,11 +320,10 @@ export function calcolaDerivati(s) {
       0
     ),
     quotaColmo:
-      g.altezzaPilastro +
-      W * g.pendenzaCopertura / 200
+      altezzaPilastro +
+      W * pendenza / 200
   };
 }
-
 export function salvaStato(s) {
   localStorage.setItem(
     CHIAVE,
