@@ -1,26 +1,120 @@
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const state={bays:4,spacing:600,depth:1800,height:750,levels:[0],items:[],selected:null,view:'3d',grid:true,snap:true,mode:'select',history:[]};
-let scene,camera,renderer,controls,root,gridHelper,raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2(),drag=false;
-const mat={pillar:new THREE.MeshStandardMaterial({color:0xb8bec2,roughness:.72}),beam:new THREE.MeshStandardMaterial({color:0x8d969c,roughness:.7}),floor:new THREE.MeshStandardMaterial({color:0xcbd1d5,roughness:.85,transparent:true,opacity:.72}),roof:new THREE.MeshStandardMaterial({color:0x707b82,roughness:.8}),select:new THREE.MeshStandardMaterial({color:0xe31b23,roughness:.5})};
-function init(){scene=new THREE.Scene();scene.background=new THREE.Color(0xdfe4e7);camera=new THREE.PerspectiveCamera(42,1,1,100000);renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));$('#viewport').appendChild(renderer.domElement);controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;scene.add(new THREE.HemisphereLight(0xffffff,0x68747c,1.8));let dl=new THREE.DirectionalLight(0xffffff,1.4);dl.position.set(5000,8000,5000);scene.add(dl);root=new THREE.Group();scene.add(root);buildModel();resize();window.addEventListener('resize',resize);renderer.domElement.addEventListener('pointerdown',pick);animate();updateLevels();}
-function pillarGeo(){return new THREE.BoxGeometry(60,state.height,60)}
-function beamGeo(len){return new THREE.BoxGeometry(Math.max(20,len),40,50)}
-function addMesh(item){let o;if(item.type==='PP2'){o=new THREE.Mesh(pillarGeo(),mat.pillar);o.position.set(item.x,state.height/2+item.z,item.y)}else if(item.type==='TL'){o=new THREE.Mesh(beamGeo(item.len),mat.beam);o.position.set(item.x,item.z+state.height,item.y);o.rotation.y=item.rot*Math.PI/180}else if(item.type==='FLOOR'){o=new THREE.Mesh(new THREE.BoxGeometry(state.bays*state.spacing+60,18,state.depth),mat.floor);o.position.set((state.bays*state.spacing)/2, item.z,0)}else if(item.type==='ROOF'){o=new THREE.Mesh(new THREE.BoxGeometry(state.bays*state.spacing+60,18,state.depth),mat.roof);o.position.set((state.bays*state.spacing)/2,item.z,0)}else return;o.userData.id=item.id;o.userData.type=item.type;root.add(o);item.object=o}
-function buildModel(){while(root.children.length)root.remove(root.children[0]);state.items=[];for(let r=0;r<2;r++)for(let i=0;i<=state.bays;i++)state.items.push({id:'PP2-'+r+'-'+i,type:'PP2',x:i*state.spacing,y:r*state.depth,z:0,pluviale:true});for(let r=0;r<2;r++)for(let i=0;i<state.bays;i++)state.items.push({id:'TL-'+r+'-'+i,type:'TL',x:i*state.spacing+state.spacing/2,y:r*state.depth,z:0,len:state.spacing,rot:0});state.levels.forEach((z,n)=>{if(n>0)state.items.push({id:'FLOOR-'+n,type:'FLOOR',x:0,y:0,z})});state.items.push({id:'ROOF-1',type:'ROOF',x:0,y:0,z:state.height});state.items.forEach(addMesh);makeGrid();updateMetrics();select(null)}
-function makeGrid(){if(gridHelper)scene.remove(gridHelper);if(!state.grid)return;gridHelper=new THREE.GridHelper(Math.max(state.bays*state.spacing,state.depth)*1.2,Math.max(10,state.bays*2),0x9ba5aa,0xc5cdd1);gridHelper.rotation.x=0;gridHelper.position.set((state.bays*state.spacing)/2,0,state.depth/2);scene.add(gridHelper)}
-function updateMetrics(){$('#mBays').textContent=state.bays;$('#mPillars').textContent=state.items.filter(x=>x.type==='PP2').length;$('#mBeams').textContent=state.items.filter(x=>x.type==='TL').length;$('#mLevels').textContent=state.levels.length}
-function resize(){let v=$('#viewport'),w=v.clientWidth,h=v.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
-function fit(){let box=new THREE.Box3().setFromObject(root),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3()),d=Math.max(s.x,s.y,s.z)*1.45;camera.position.set(c.x+d,c.y+d*.75,c.z+d);controls.target.copy(c);controls.update()}
-function view(v){state.view=v;let cx=state.bays*state.spacing/2,cy=state.height/2,cz=state.depth/2,d=Math.max(state.bays*state.spacing,state.depth,state.height)*1.5; if(v==='plan'){camera.position.set(cx,d,cz);controls.target.set(cx,0,cz)}else if(v==='front'||v==='section'){camera.position.set(cx,cy,d);controls.target.set(cx,cy,0)}else if(v==='roof'){camera.position.set(cx,d,cz);controls.target.set(cx,state.height,cz)}else{camera.position.set(cx+d*.8,cy+d*.55,cz+d*.8);controls.target.set(cx,cy,cz)}controls.update();$('#viewBadge').textContent=v==='3d'?'MODELLO 3D':v.toUpperCase()}
-function snap(v){return state.snap?Math.round(v/10)*10:v}
-function pick(e){if(state.mode!=='select')return;let r=renderer.domElement.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(mouse,camera);let hits=raycaster.intersectObjects(root.children,false);select(hits.length?hits[0].object.userData.id:null)}
-function select(id){state.selected=id;root.children.forEach(o=>o.material=(o.userData.id===id?mat.select:mat[o.userData.type==='PP2'?'pillar':o.userData.type==='TL'?'beam':o.userData.type.toLowerCase()]));let it=state.items.find(x=>x.id===id);$('#emptySel').hidden=!!it;$('#props').hidden=!it;if(it){$('#selName').textContent=it.id+' · '+it.type;$('#px').value=Math.round(it.x);$('#py').value=Math.round(it.y);$('#pz').value=Math.round(it.z);$('#prot').value=Math.round(it.rot||0);$('#pluv').checked=it.pluviale!==false}}
-function applyProps(){let it=state.items.find(x=>x.id===state.selected);if(!it)return;it.x=snap(+$('#px').value);it.y=snap(+$('#py').value);it.z=+$('#pz').value;it.rot=+$('#prot').value;it.pluviale=$('#pluv').checked;rebuildPreserve()}
-function rebuildPreserve(){let old=state.items.map(x=>({...x,object:null}));while(root.children.length)root.remove(root.children[0]);state.items=old;state.items.forEach(addMesh);makeGrid();select(state.selected);updateMetrics()}
-function add(type){let id=type+'-'+Date.now();let item;if(type==='PP2')item={id,type,x:state.bays*state.spacing/2,y:state.depth/2,z:0,pluviale:true};if(type==='TL')item={id,type,x:state.bays*state.spacing/2,y:state.depth/2,z:0,len:state.spacing,rot:0};if(type==='FLOOR'){let z=state.height*.5;state.levels.push(z);item={id,type,x:0,y:0,z}}if(type==='ROOF')item={id,type,x:0,y:0,z:state.height};state.items.push(item);addMesh(item);select(id);updateMetrics();updateLevels()}
-function addLevel(){let z=state.levels.length?Math.max(...state.levels)+250:250;if(z>=state.height)z=state.height-50;state.levels.push(z);state.items.push({id:'FLOOR-'+Date.now(),type:'FLOOR',x:0,y:0,z});rebuildPreserve();updateLevels()}
-function updateLevels(){$('#levels').innerHTML=state.levels.map((z,i)=>'<div class="level"><span>Livello '+i+'</span><b>'+Math.round(z)+' cm</b></div>').join('')}
-function exportDXF(){let L=['0','SECTION','2','ENTITIES'];const line=(a,b)=>L.push('0','LINE','8','CACEM-GENERATO','10',a[0],'20',a[1],'30',a[2],'11',b[0],'21',b[1],'31',b[2]);state.items.forEach(it=>{if(it.type==='PP2'){let x=it.x,y=it.y,s=30;line([x-s,y-s,0],[x+s,y-s,0]);line([x+s,y-s,0],[x+s,y+s,0]);line([x+s,y+s,0],[x-s,y+s,0]);line([x-s,y+s,0],[x-s,y-s,0])}else if(it.type==='TL'){let a=it.x-it.len/2,b=it.x+it.len/2;line([a,it.y,0],[b,it.y,0])}});L.push('0','ENDSEC','0','EOF');let blob=new Blob([L.join('\n')],{type:'application/dxf'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='CACEM_modello.dxf';a.click();URL.revokeObjectURL(a.href);$('#status').textContent='DXF esportato'}
-function applyGrid(){state.bays=+$('#bays').value;state.spacing=+$('#spacing').value;state.depth=+$('#depth').value;state.height=+$('#height').value;state.levels=[0];buildModel();fit();$('#status').textContent='Maglia aggiornata'}
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const state={project:null,catalog:null,items:[],selected:null,view:"3d",grid:true,snap:true,mode:"select"};
+let scene,camera,renderer,controls,root,raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
+
+const materials={
+ pillar:new THREE.MeshStandardMaterial({color:0xb8bec2,roughness:.75}),
+ beam:new THREE.MeshStandardMaterial({color:0x8d969c,roughness:.72}),
+ floor:new THREE.MeshStandardMaterial({color:0xcbd1d5,roughness:.85,transparent:true,opacity:.55}),
+ roof:new THREE.MeshStandardMaterial({color:0x707b82,roughness:.82,transparent:true,opacity:.7}),
+ selected:new THREE.MeshStandardMaterial({color:0xe31b23,roughness:.5})
+};
+
+async function loadSource(){
+ const [a,b]=await Promise.all([fetch("data/cacem-project.json"),fetch("data/cacem-catalog.json")]);
+ if(!a.ok||!b.ok) throw new Error("Dati CACEM non disponibili");
+ state.project=await a.json(); state.catalog=await b.json();
+ buildSourceModel(); populateLibrary(); updateStatus("MODELLO DA SORGENTE DXF");
+}
+
+function addSourcePillar(x,y,row){
+ const id="P-"+row+"-"+x.toFixed(3);
+ state.items.push({id,type:"PP?",family:"PILASTRO",x,y,z:0,source:true});
+}
+function buildSourceModel(){
+ state.items=[];
+ const p=state.project.mainPlan;
+ p.pillarCenterX.forEach(x=>addSourcePillar(x,p.topRowY,"TOP"));
+ p.lowerPillarCenterX.forEach(x=>addSourcePillar(x,p.bottomRowY,"BOTTOM"));
+ [286.393].forEach(y=>[72.620368,81.577034,90.358145].forEach(x=>addSourcePillar(x,y,"SPECIAL")));
+ [291.183].forEach(y=>[154.610368,160.400368].forEach(x=>addSourcePillar(x,y,"SPECIAL")));
+ renderModel(); updateMetrics(); fit();
+}
+function renderModel(){
+ while(root.children.length) root.remove(root.children[0]);
+ state.items.forEach(it=>{
+   if(it.type==="PP?"){
+     const o=new THREE.Mesh(new THREE.BoxGeometry(.55,7.5,.55),materials.pillar);
+     o.position.set((it.x-72.620368),3.75,(it.y-280.993));
+     o.userData.id=it.id; root.add(o); it.object=o;
+   }
+ });
+ // schematic connections derived from actual plan axes; profiles remain intentionally unresolved
+ const p=state.project.mainPlan;
+ const xs=[...new Set([...p.pillarCenterX,...p.lowerPillarCenterX])].sort((a,b)=>a-b);
+ const makeBeam=(x1,x2,y)=>{
+   const len=x2-x1; const o=new THREE.Mesh(new THREE.BoxGeometry(len,.45,.35),materials.beam);
+   o.position.set((x1+x2)/2-72.620368,7.5,(y-280.993)); o.userData.id="B-"+x1+"-"+x2+"-"+y; root.add(o);
+ };
+ for(let i=0;i<xs.length-1;i++){ makeBeam(xs[i],xs[i+1],p.topRowY); makeBeam(xs[i],xs[i+1],p.bottomRowY); }
+ makeGrid();
+}
+function makeGrid(){
+ const old=scene.getObjectByName("sourceGrid"); if(old) scene.remove(old);
+ if(!state.grid)return;
+ const p=state.project.mainPlan, minX=Math.min(...p.pillarCenterX),maxX=Math.max(...p.pillarCenterX),minY=Math.min(...p.pillarCenterX),maxY=Math.max(...p.pillarCenterX);
+ const g=new THREE.GridHelper(Math.max(maxX-minX,20)*1.25,20,0x9ba5aa,0xc5cdd1);
+ g.name="sourceGrid"; g.position.set((maxX-minX)/2,0,(p.bottomRowY-p.topRowY)/2); scene.add(g);
+}
+function updateMetrics(){
+ const n=state.items.filter(x=>x.family==="PILASTRO").length;
+ $("#mBays").textContent="10"; $("#mPillars").textContent=n; $("#mBeams").textContent="20"; $("#mLevels").textContent="1";
+}
+function populateLibrary(){
+ const lib=$(".left");
+ const title=lib.querySelector(".libGroup");
+ const box=document.createElement("div"); box.className="libGroup";
+ box.innerHTML="<label>CATALOGO DA SCHEDE</label>";
+ const families=state.catalog.families;
+ Object.entries(families).forEach(([family,data])=>{
+   const b=document.createElement("button"); b.className="libItem";
+   b.innerHTML="<span><b>"+family.replaceAll("_"," ").toUpperCase()+"</b><small>"+data.types.join(" · ")+"</small></span><i>✓</i>";
+   box.appendChild(b);
+ });
+ lib.insertBefore(box,title);
+}
+function updateStatus(t){$("#status").textContent=t}
+function resize(){const v=$("#viewport"),w=v.clientWidth,h=v.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+function fit(){const box=new THREE.Box3().setFromObject(root);if(box.isEmpty())return;const c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3()),d=Math.max(s.x,s.y,s.z)*1.8;camera.position.set(c.x+d,c.y+d*.75,c.z+d);controls.target.copy(c);controls.update()}
+function view(v){state.view=v;const c=root.getBoundingClientRect?null:null;const box=new THREE.Box3().setFromObject(root),ctr=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3()),d=Math.max(sz.x,sz.y,sz.z)*1.8;
+ if(v==="plan"||v==="roof"){camera.position.set(ctr.x,d,ctr.z);controls.target.set(ctr.x,0,ctr.z)}
+ else if(v==="front"){camera.position.set(ctr.x,ctr.y,d);controls.target.set(ctr.x,ctr.y,ctr.z)}
+ else if(v==="section"){camera.position.set(d,ctr.y,ctr.z);controls.target.copy(ctr)}
+ else {camera.position.set(ctr.x+d*.8,ctr.y+d*.55,ctr.z+d*.8);controls.target.copy(ctr)}
+ controls.update();$("#viewBadge").textContent=v==="3d"?"MODELLO 3D":v.toUpperCase()}
+function select(id){
+ state.selected=id;
+ root.children.forEach(o=>o.material=o.userData.id===id?materials.selected:(o.userData.id&&o.userData.id.startsWith("B-")?materials.beam:materials.pillar));
+ const it=state.items.find(x=>x.id===id);
+ $("#emptySel").hidden=!!it; $("#props").hidden=!it;
+ if(it){$("#selName").textContent=it.id+" · "+it.family+" · tipo da scheda";$("#px").value=it.x.toFixed(3);$("#py").value=it.y.toFixed(3);$("#pz").value=it.z||0;$("#prot").value=0;$("#pluv").checked=false}
+}
+function pick(e){
+ if(state.mode!=="select")return;
+ const r=renderer.domElement.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+ raycaster.setFromCamera(mouse,camera);const hit=raycaster.intersectObjects(root.children,false)[0];select(hit?hit.object.userData.id:null);
+}
+function init(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0xdfe4e7);
+ camera=new THREE.PerspectiveCamera(42,1,0.1,100000);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));$("#viewport").appendChild(renderer.domElement);
+ controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+ scene.add(new THREE.HemisphereLight(0xffffff,0x68747c,1.8));const dl=new THREE.DirectionalLight(0xffffff,1.4);dl.position.set(5000,8000,5000);scene.add(dl);
+ root=new THREE.Group();scene.add(root);resize();window.addEventListener("resize",resize);renderer.domElement.addEventListener("pointerdown",pick);
+ animate();
+}
 function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}
-$$('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));$$('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));$('#applyGrid').onclick=applyGrid;$('#applyProps').onclick=applyProps;$('#addLevel').onclick=addLevel;$('#fit').onclick=fit;$('#grid').onclick=()=>{state.grid=!state.grid;$('#grid').classList.toggle('on',state.grid);makeGrid()};$('#snap').onclick=()=>{state.snap=!state.snap;$('#snap').classList.toggle('on',state.snap)};$('#delete').onclick=()=>{if(!state.selected)return;state.items=state.items.filter(x=>x.id!==state.selected);rebuildPreserve();$('#status').textContent='Elemento eliminato'};$('#modeSelect').onclick=()=>{state.mode='select';$('#modeSelect').classList.add('active');$('#modeMove').classList.remove('active')};$('#modeMove').onclick=()=>{state.mode='move';$('#modeMove').classList.add('active');$('#modeSelect').classList.remove('active')};$('#bays').onchange=()=>{};$('#search').oninput=e=>$$('.libItem').forEach(b=>b.style.display=b.innerText.toLowerCase().includes(e.target.value.toLowerCase())?'flex':'none');$('#dxfInput').onchange=e=>{let f=e.target.files[0];if(f){$('#status').textContent='DXF selezionato: '+f.name+' — parser/catalogo in preparazione';}};$('#export').onclick=exportDXF;$('#save').onclick=()=>{localStorage.cacemModel=JSON.stringify({...state,items:state.items.map(x=>({...x,object:undefined}))});$('#status').textContent='Progetto salvato localmente'};init();setTimeout(fit,100);
+$$("[data-view]").forEach(b=>b.onclick=()=>view(b.dataset.view));
+$("#fit").onclick=fit;
+$("#grid").onclick=()=>{state.grid=!state.grid;$("#grid").classList.toggle("on",state.grid);makeGrid()};
+$("#modeSelect").onclick=()=>{state.mode="select";$("#modeSelect").classList.add("active");$("#modeMove").classList.remove("active")};
+$("#modeMove").onclick=()=>{updateStatus("Spostamento: in sviluppo sul modello sorgente");$("#modeSelect").classList.remove("active");$("#modeMove").classList.add("active")};
+$("#snap").onclick=()=>{state.snap=!state.snap;$("#snap").classList.toggle("on",state.snap)};
+$("#search").oninput=e=>$$(".libItem").forEach(b=>b.style.display=b.innerText.toLowerCase().includes(e.target.value.toLowerCase())?"flex":"none");
+$("#dxfInput").onchange=e=>{if(e.target.files[0])updateStatus("DXF ricevuto: la sorgente ufficiale resta il file esecutivo")};
+$("#export").onclick=()=>updateStatus("Esportazione DXF: verrà collegata al modello centrale");
+$("#save").onclick=()=>{localStorage.cacemSourceModel=JSON.stringify(state.items.map(x=>({...x,object:undefined})));updateStatus("Modello sorgente salvato")};
+$("#applyGrid").onclick=()=>updateStatus("La maglia del progetto sorgente non viene sostituita da una maglia generica");
+$("#delete").onclick=()=>updateStatus("Eliminazione disponibile dopo la definizione semantica dell'elemento");
+$("#addLevel").onclick=()=>updateStatus("Interpia​no: usare la scheda e la carpenteria sorgente");
+init(); loadSource().catch(e=>updateStatus("Errore caricamento modello sorgente: "+e.message));
