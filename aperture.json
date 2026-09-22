@@ -1,0 +1,141 @@
+{
+  "descrizione": "Catalogo aperture per pannelli tamponamento",
+  "tipi": [
+    {
+      "id": "porta_pedonale",
+      "nome": "Porta pedonale",
+      "categoria": "porta",
+      "dimensioniStd": [
+        { "larghezza": 800,  "altezza": 2100, "note": "Standard" },
+        { "larghezza": 900,  "altezza": 2100, "note": "Comoda" },
+        { "larghezza": 1000, "altezza": 2100, "note": "Accessibile" },
+        { "larghezza": 1200, "altezza": 2100, "note": "Doppia anta" }
+      ],
+      "altezzaDaTerra": 0,
+      "materiali": ["alluminio", "PVC", "ferro", "legno"],
+      "note": "Porta pedonale standard, con o senza vetro",
+      "simbolo2D": "rettangolo con arco apertura"
+    },
+    {
+      "id": "porta_tagliafuoco",
+      "nome": "Porta tagliafuoco",
+      "categoria": "porta",
+      "dimensioniStd": [
+        { "larghezza": 900,  "altezza": 2100, "note": "REI 60" },
+        { "larghezza": 1200, "altezza": 2100, "note": "REI 120" }
+      ],
+      "altezzaDaTerra": 0,
+      "materiali": ["ferro verniciato"],
+      "note": "Porta REI per uscite di sicurezza",
+      "simbolo2D": "rettangolo con barra uscita"
+    },
+    {
+      "id": "portone_sezionale",
+      "nome": "Portone sezionale",
+      "categoria": "portone",
+      "dimensioniStd": [
+        { "larghezza": 3000, "altezza": 3000, "note": "Piccolo" },
+        { "larghezza": 4000, "altezza": 4000, "note": "Standard" },
+        { "larghezza": 5000, "altezza": 4500, "note": "Grande" },
+        { "larghezza": 6000, "altezza": 5000, "note": "Molto grande" }
+      ],
+      "altezzaDaTerra": 0,
+      "materiali": ["lamiera zincata", "lamiera preverniciata"],
+      "note": "Portone sezionale a scomparsa nel soffitto",
+      "simbolo2D": "rettangolo con frecce verticali"
+    },
+    {
+      "id": "portone_basculante",
+      "nome": "Portone basculante",
+      "categoria": "portone",
+      "dimensioniStd": [
+        { "larghezza": 3000, "altezza": 3000, "note": "Piccolo" },
+        { "larghezza": 4000, "altezza": 3500, "note": "Standard" },
+        { "larghezza": 5000, "altezza": 4000, "note": "Grande" }
+      ],
+      "altezzaDaTerra": 0,
+      "materiali": ["lamiera preverniciata"],
+      "note": "Portone basculante a una o due ante",
+      "simbolo2D": "rettangolo con frecce orizzontali"
+    },
+    {
+      "id": "portone_scorrevole",
+      "nome": "Portone scorrevole",
+      "categoria": "portone",
+      "dimensioniStd": [
+        { "larghezza": 4000, "altezza": 4000, "note": "Standard" },
+        { "larghezza": 6000, "altezza": 5000, "note": "Grande" },
+        { "larghezza": 8000, "altezza": 6000, "note": "Industriale" }
+      ],
+      "altezzaDaTerra": 0,
+      "materiali": ["lamiera", "pannello sandwich"],
+      "note": "Portone scorrevole su rotaia esterna",
+      "simbolo2D": "rettangolo con frecce laterali"
+    },
+    {
+      "id": "finestra_fissa",
+      "nome": "Finestra fissa",
+      "categoria": "finestra",
+      "dimensioniStd": [
+        { "larghezza": 600,  "altezza": 600,  "note": "Piccola" },
+        { "larghezza": 1000, "altezza": 1000, "note": "Quadrata" },
+        { "larghezza": 1200, "altezza": 1200, "note": "Standard" },
+        { "larghezza": 1500, "altezza": 1200, "note": "Orizzontale" }
+      ],
+      "altezzaDaTerra": 1000,
+      "materiali": ["alluminio", "PVC"],
+      "note": "Finestra fissa non apribile",
+      "simbolo2D": "rettangolo con croce"
+    },
+    {
+      "id": "finestra_apribile",
+      "nome": "Finestra apribile",
+      "categoria": "finestra",
+      "dimensioniStd": [
+        { "larghezza": 800,  "altezza": 1200, "note": "Standard" },
+        { "larghezza": 1200, "altezza": 1200, "note": "Doppia anta" },
+        { "larghezza": 1500, "altezza": 1200, "note": "Tre ante" }
+      ],
+      "altezzaDaTerra": 1000,
+      "materiali": ["alluminio", "PVC"],
+      "note": "Finestra con apertura a battente o vasistas",
+      "simbolo2D": "rettangolo con linee apertura"
+    },
+    {
+      "id": "finestra_nastro",
+      "nome": "Finestra a nastro",
+      "categoria": "finestra",
+      "dimensioniStd": [
+        { "larghezza": 3000, "altezza": 800,  "note": "Modulo 3m" },
+        { "larghezza": 6000, "altezza": 800,  "note": "Modulo 6m" },
+        { "larghezza": 9000, "altezza": 800,  "note": "Modulo 9m" }
+      ],
+      "altezzaDaTerra": 4000,
+      "materiali": ["alluminio"],
+      "note": "Finestra continua orizzontale tipo nastro",
+      "simbolo2D": "rettangolo lungo"
+    },
+    {
+      "id": "lucernario",
+      "nome": "Lucernario",
+      "categoria": "lucernario",
+      "dimensioniStd": [
+        { "larghezza": 1000, "lunghezza": 1500, "note": "Piccolo" },
+        { "larghezza": 1500, "lunghezza": 2500, "note": "Medio" },
+        { "larghezza": 2000, "lunghezza": 4000, "note": "Grande" }
+      ],
+      "altezzaDaTerra": 0,
+      "posizione": "copertura",
+      "materiali": ["policarbonato", "vetro"],
+      "note": "Lucernario su copertura per illuminazione naturale",
+      "simbolo2D": "rettangolo tratteggiato"
+    }
+  ],
+  "opzioni": {
+    "tapparelle": true,
+    "zanzariere": true,
+    "maniglioni_antipanico": true,
+    "colori_telaio": ["bianco", "grigio", "nero", "effetto legno"],
+    "colori_vetro": ["trasparente", "satinato", "selettivo"]
+  }
+}
