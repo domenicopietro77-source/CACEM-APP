@@ -1,0 +1,20 @@
+{
+  "version":"1.0",
+  "inspiredBy":"V-Squared/v2-Configurator",
+  "model":"CACEM",
+  "groups":[
+    {"id":"project","label":"PROGETTO"},
+    {"id":"grid","label":"MAGLIA STRUTTURALE"},
+    {"id":"pillars","label":"PILASTRI"},
+    {"id":"beams","label":"TRAVI"},
+    {"id":"intermediateFloor","label":"INTERPIANO"},
+    {"id":"roof","label":"COPERTURA"},
+    {"id":"panels","label":"PANNELLI"},
+    {"id":"consoles","label":"MENSOLE"}
+  ],
+  "principles":[
+    "La configurazione descrive il modello, non solo l'interfaccia.",
+    "Le dipendenze abilitano o disabilitano opzioni senza duplicare la geometria.",
+    "Il modello strutturale resta la fonte centrale per 2D, 3D, distinta e DXF."
+  ]
+}
