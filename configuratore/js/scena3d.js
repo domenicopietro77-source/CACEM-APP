@@ -1,271 +1,43 @@
-// scena3d.js — Scena 3D del capannone con Three.js
-
+// scena3d.js — Scena 3D STEP 4, collegata al modello strutturale e ai cataloghi
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { parseSezione } from './modello.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {trovaPilastro,trovaTrave,trovaTegolo} from './catalogo.js';
+import {lunghezzaTotale} from './modello.js';
 
-let scene, camera, renderer, controls;
-let gruppoCapannone;
-let griglia, assi;
-let inizializzato = false;
+let scene,camera,renderer,controls,gruppoCapannone,inizializzato=false,wireframe=false;
+const C={pil:0x8a8f99,trave:0x6fa8dc,tegolo:0xd4d4d4,pannello:0xb8b8b8,griglia:0x2a2f38,terreno:0x1a1d22};
 
-const COLORI = {
-  pilastri: 0x8a8f99,
-  traveColmo: 0x6fa8dc,
-  traviTrasv: 0x9ec5e8,
-  pannelli: 0xb8b8b8,
-  copertura: 0xd4d4d4,
-  griglia: 0x2a2f38,
-  terreno: 0x1a1d22,
-};
-
-export function initScena3D() {
-  if (inizializzato) return;
-
-  const container = document.getElementById('view-3d');
-  if (!container) return;
-
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setClearColor(0x14171c, 1);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  container.appendChild(renderer.domElement);
-
-  scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x14171c, 80, 250);
-
-  camera = new THREE.PerspectiveCamera(
-    50,
-    Math.max(container.clientWidth, 1) / Math.max(container.clientHeight, 1),
-    0.1,
-    1000
-  );
-  camera.position.set(60, 45, 60);
-
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.target.set(0, 3, 0);
-  controls.maxPolarAngle = Math.PI / 2 - 0.02;
-  controls.update();
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-
-  const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-  dir.position.set(80, 100, 60);
-  dir.castShadow = true;
-  dir.shadow.mapSize.set(2048, 2048);
-  dir.shadow.camera.left = -120;
-  dir.shadow.camera.right = 120;
-  dir.shadow.camera.top = 120;
-  dir.shadow.camera.bottom = -120;
-  dir.shadow.camera.near = 1;
-  dir.shadow.camera.far = 300;
-  scene.add(dir);
-
-  scene.add(new THREE.HemisphereLight(0x8ec7ff, 0x202020, 0.35));
-
-  griglia = new THREE.GridHelper(300, 300, COLORI.griglia, COLORI.griglia);
-  griglia.position.y = 0.01;
-  griglia.material.opacity = 0.35;
-  griglia.material.transparent = true;
-  scene.add(griglia);
-
-  assi = new THREE.AxesHelper(8);
-  assi.position.set(-1, 0.02, -1);
-  scene.add(assi);
-
-  gruppoCapannone = new THREE.Group();
-  scene.add(gruppoCapannone);
-
-  window.addEventListener('resize', onResize);
-  inizializzato = true;
-  animate();
+export function initScena3D(){
+ if(inizializzato)return; const c=document.getElementById('view-3d');if(!c)return;
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(c.clientWidth,c.clientHeight);renderer.setClearColor(0x14171c,1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;c.appendChild(renderer.domElement);
+ scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(50,Math.max(c.clientWidth,1)/Math.max(c.clientHeight,1),.1,1000);camera.position.set(60,45,60);
+ controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.08;controls.target.set(0,3,0);controls.maxPolarAngle=Math.PI/2-.02;controls.update();
+ scene.add(new THREE.AmbientLight(0xffffff,.6));const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(80,100,60);dl.castShadow=true;scene.add(dl);scene.add(new THREE.HemisphereLight(0x8ec7ff,0x202020,.35));
+ const g=new THREE.GridHelper(300,300,C.griglia,C.griglia);g.position.y=.01;g.material.opacity=.35;g.material.transparent=true;scene.add(g);
+ gruppoCapannone=new THREE.Group();scene.add(gruppoCapannone);window.addEventListener('resize',onResize);inizializzato=true;animate();
 }
-
-function animate() {
-  requestAnimationFrame(animate);
-  if (controls) controls.update();
-  if (renderer && scene && camera) renderer.render(scene, camera);
+function animate(){requestAnimationFrame(animate);controls?.update();if(renderer&&scene&&camera)renderer.render(scene,camera)}
+function onResize(){const c=document.getElementById('view-3d');if(!c||!renderer||!camera)return;const w=c.clientWidth,h=c.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}
+export function resizeScena3D(){onResize()}
+function clearGroup(){while(gruppoCapannone.children.length){const o=gruppoCapannone.children.pop();o.traverse(x=>{x.geometry?.dispose();if(x.material){const m=Array.isArray(x.material)?x.material:[x.material];m.forEach(mm=>mm.dispose())}})}}
+function material(color){return new THREE.MeshStandardMaterial({color,roughness:.78,metalness:.04,wireframe})}
+function box(w,h,d,x,y,z,m){const q=new THREE.Mesh(new THREE.BoxGeometry(Math.max(.05,w),Math.max(.05,h),Math.max(.05,d)),m);q.position.set(x,y,z);q.castShadow=true;q.receiveShadow=true;gruppoCapannone.add(q);return q}
+export function aggiornaScena3D(stato){
+ if(!inizializzato)initScena3D();if(!gruppoCapannone)return;clearGroup();
+ const g=stato.generale,L=Math.max(1,lunghezzaTotale(stato)),W=Math.max(1,+g.luce||30),H=Math.max(1,+g.altezzaPilastro||6),salita=W/2*(+g.pendenzaCopertura||5)/100,Hc=H+salita;
+ const p=trovaPilastro(stato.pilastri.tipoId),t=trovaTrave(stato.travi.tipoId),teg=trovaTegolo(stato.copertura.tegoloId);
+ const sx=p.sezione.l/100,sy=p.sezione.h/100,n=stato.campate.length+1,passo=L/Math.max(1,n-1);
+ const mp=material(C.pil);for(let fila=0;fila<2;fila++){const z=(fila?1:-1)*(W/2-sy/2);for(let i=0;i<n;i++)box(sx,H,sy,-L/2+i*passo,H/2,z,mp)}
+ const mt=material(C.trave),bt=t.base/100,at=t.altezza/100;
+ box(L,at,bt,0,H-at/2,W/2-sy/2,mt);box(L,at,bt,0,H-at/2,-W/2+sy/2,mt);
+ const lf=Math.sqrt((W/2)**2+salita**2),ang=Math.atan2(salita,W/2);
+ for(let i=0;i<n;i++){const x=-L/2+i*passo;for(const s of [-1,1]){const m=new THREE.Mesh(new THREE.BoxGeometry(bt,at,lf),material(C.trave));m.position.set(x,H+(salita/2),s*W/4);m.rotation.x=s<0?ang:-ang;m.castShadow=true;gruppoCapannone.add(m)}}
+ const mpan=material(C.pannello),sp=(+stato.pannelli.spessore||20)/100;
+ box(L,H,sp,0,H/2,-W/2+sp/2,mpan);box(L,H,sp,0,H/2,W/2-sp/2,mpan);box(sp,H,W,-L/2+sp/2,H/2,0,mpan);box(sp,H,W,L/2-sp/2,H/2,0,mpan);
+ const mc=material(C.tegolo),tc=Math.max(.2,teg.altezza/100),lc=Math.max(.6,teg.larghezza/100),numero=Math.max(1,Math.ceil(L/lc));
+ for(let i=0;i<numero;i++){const x=-L/2+(i+.5)*(L/numero);for(const s of [-1,1]){const m=new THREE.Mesh(new THREE.BoxGeometry(L/numero,tc,lf),mc);m.position.set(x,H+at+salita/2,s*W/4);m.rotation.x=s<0?ang:-ang;m.castShadow=true;gruppoCapannone.add(m)}}
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(L,W),new THREE.MeshStandardMaterial({color:C.terreno,roughness:1,wireframe:false}));floor.rotation.x=-Math.PI/2;gruppoCapannone.add(floor);
 }
-
-function onResize() {
-  const container = document.getElementById('view-3d');
-  if (!container || !renderer || !camera) return;
-  const w = container.clientWidth;
-  const h = container.clientHeight;
-  if (w === 0 || h === 0) return;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-}
-
-function svuotaGruppo() {
-  while (gruppoCapannone.children.length > 0) {
-    const obj = gruppoCapannone.children.pop();
-    obj.traverse(child => {
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) {
-        if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
-        else child.material.dispose();
-      }
-    });
-  }
-}
-
-function mat(color, opts = {}) {
-  return new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.75,
-    metalness: 0.05,
-    ...opts,
-  });
-}
-
-function addBox(w, h, d, x, y, z, material) {
-  const geo = new THREE.BoxGeometry(w, h, d);
-  const mesh = new THREE.Mesh(geo, material);
-  mesh.position.set(x, y, z);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  gruppoCapannone.add(mesh);
-  return mesh;
-}
-
-export function aggiornaScena3D(stato) {
-  if (!inizializzato) initScena3D();
-  if (!gruppoCapannone) return;
-
-  svuotaGruppo();
-
-  const d = stato.dimensioni;
-  const e = stato.elementi;
-
-  const L = Math.max(1, Number(d.lunghezza) || 60);
-  const W = Math.max(1, Number(d.larghezza) || 30);
-  const H = Math.max(1, Number(d.altezzaPilastro) || 6);
-  const pendenza = (Number(d.pendenzaCopertura) || 5) / 100;
-  const salita = (W / 2) * pendenza;
-  const Hcolmo = H + salita;
-
-  const sezione = parseSezione(e.sezionePilastro);
-  const spPannello = (Number(e.spessorePannello) || 20) / 100;
-
-  const numPerFila = Math.max(2, Math.round(Number(d.numeroPilastriPerFila) || 5));
-  const passoX = L / (numPerFila - 1);
-
-  const matPilastro = mat(COLORI.pilastri, { roughness: 0.85 });
-  for (let f = 0; f < 2; f++) {
-    const z = f === 0 ? -W / 2 + sezione.h / 2 : W / 2 - sezione.h / 2;
-    for (let i = 0; i < numPerFila; i++) {
-      const x = -L / 2 + i * passoX;
-      addBox(sezione.l, H, sezione.h, x, H / 2, z, matPilastro);
-    }
-  }
-
-  const altTrave = 0.8;
-  const larTrave = 0.5;
-  addBox(L, altTrave, larTrave, 0, Hcolmo - altTrave / 2, 0, mat(COLORI.traveColmo));
-
-  const numTraviPerFila = Math.max(2, Math.round(Number(d.numeroCampate) || 4) + 1);
-  const passoTraveX = L / (numTraviPerFila - 1);
-  const lunghezzaTraveFalda = Math.sqrt((W / 2) ** 2 + salita ** 2);
-  const angoloFalda = Math.atan2(salita, W / 2);
-
-  const matTraveTrasv = mat(COLORI.traviTrasv);
-  for (let i = 0; i < numTraviPerFila; i++) {
-    const x = -L / 2 + i * passoTraveX;
-    for (const segno of [-1, 1]) {
-      const zInizio = segno * W / 2;
-      const zMedio = zInizio / 2;
-      const yMedio = (H + Hcolmo) / 2;
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(larTrave, altTrave, lunghezzaTraveFalda),
-        matTraveTrasv
-      );
-      mesh.position.set(x, yMedio, zMedio);
-      mesh.rotation.x = segno === -1 ? angoloFalda : -angoloFalda;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      gruppoCapannone.add(mesh);
-    }
-  }
-
-  const matPannello = mat(COLORI.pannelli, { roughness: 0.9 });
-  addBox(L, H, spPannello, 0, H / 2, -W / 2 + spPannello / 2, matPannello);
-  addBox(L, H, spPannello, 0, H / 2, W / 2 - spPannello / 2, matPannello);
-  addBox(spPannello, H, Math.max(0.1, W - 2 * spPannello), -L / 2 + spPannello / 2, H / 2, 0, matPannello);
-  addBox(spPannello, H, Math.max(0.1, W - 2 * spPannello), L / 2 - spPannello / 2, H / 2, 0, matPannello);
-
-  const matCopertura = mat(COLORI.copertura, { roughness: 0.95 });
-  const spCopertura = 0.25;
-  for (const segno of [-1, 1]) {
-    const zMedio = (segno * W / 2) / 2;
-    const yMedio = (H + Hcolmo) / 2 + altTrave + spCopertura / 2;
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(L, spCopertura, lunghezzaTraveFalda),
-      matCopertura
-    );
-    mesh.position.set(0, yMedio, zMedio);
-    mesh.rotation.x = segno === -1 ? angoloFalda : -angoloFalda;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    gruppoCapannone.add(mesh);
-  }
-
-  const pavimento = new THREE.Mesh(
-    new THREE.PlaneGeometry(L, W),
-    new THREE.MeshStandardMaterial({ color: COLORI.terreno, roughness: 1, metalness: 0 })
-  );
-  pavimento.rotation.x = -Math.PI / 2;
-  pavimento.position.y = 0;
-  pavimento.receiveShadow = true;
-  gruppoCapannone.add(pavimento);
-}
-
-export function vistaTop() {
-  if (!camera || !controls) return;
-  const t = controls.target;
-  camera.position.set(t.x, 120, t.z + 0.001);
-  controls.update();
-}
-
-export function vistaFront() {
-  if (!camera || !controls) return;
-  const t = controls.target;
-  camera.position.set(t.x, t.y + 5, t.z + 120);
-  controls.update();
-}
-
-export function vistaLato() {
-  if (!camera || !controls) return;
-  const t = controls.target;
-  camera.position.set(t.x + 120, t.y + 5, t.z);
-  controls.update();
-}
-
-export function vistaIsometrica() {
-  if (!camera || !controls) return;
-  const t = controls.target;
-  camera.position.set(t.x + 60, t.y + 45, t.z + 60);
-  controls.update();
-}
-
-export function resizeScena3D() {
-  onResize();
-}
-
-let wireframeAttivo = false;
-export function toggleWireframe() {
-  wireframeAttivo = !wireframeAttivo;
-  if (!gruppoCapannone) return wireframeAttivo;
-  gruppoCapannone.traverse(obj => {
-    if (obj.isMesh && obj.material) {
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach(m => { m.wireframe = wireframeAttivo; });
-    }
-  });
-  return wireframeAttivo;
-}
+function cam(x,y,z){if(!camera||!controls)return;const t=controls.target;camera.position.set(t.x+x,t.y+y,t.z+z);controls.update()}
+export function vistaTop(){cam(0,120,.001)} export function vistaFront(){cam(0,5,120)} export function vistaLato(){cam(120,5,0)} export function vistaIsometrica(){cam(60,45,60)}
+export function toggleWireframe(){wireframe=!wireframe;gruppoCapannone?.traverse(o=>{if(o.isMesh&&o.material){const a=Array.isArray(o.material)?o.material:[o.material];a.forEach(m=>m.wireframe=wireframe)}});return wireframe}
