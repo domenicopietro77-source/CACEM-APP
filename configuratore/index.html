@@ -1,89 +1,38 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CACEM · Configuratore Capannoni Prefabbricati</title>
-  <link rel="stylesheet" href="css/style.css" />
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>CACEM · Configuratore Capannoni</title><link rel="stylesheet" href="css/style.css"></head>
 <body>
-  <header class="topbar">
-    <div class="logo">CACEM</div>
-    <div class="subtitle">Configuratore Capannoni Prefabbricati in Cemento</div>
-    <div class="topbar-actions">
-      <button id="btn-salva" class="btn">Salva</button>
-      <button id="btn-carica" class="btn">Carica</button>
-      <button id="btn-reset" class="btn btn-danger">Reset</button>
-    </div>
-  </header>
-
-  <main class="layout">
-    <aside class="panel panel-left">
-      <h2>Parametri</h2>
-      <fieldset>
-        <legend>Dimensioni principali</legend>
-        <label>Lunghezza (m)<input type="number" id="p-lunghezza" min="10" max="200" step="1" value="60" /></label>
-        <label>Larghezza (m)<input type="number" id="p-larghezza" min="10" max="80" step="1" value="30" /></label>
-        <label>Altezza pilastro (m)<input type="number" id="p-altezzaPilastro" min="4" max="12" step="0.5" value="6" /></label>
-        <label>Pendenza copertura (%)<input type="number" id="p-pendenzaCopertura" min="3" max="20" step="0.5" value="5" /></label>
-      </fieldset>
-      <fieldset>
-        <legend>Campate e pilastri</legend>
-        <label>Numero campate<input type="number" id="p-numeroCampate" min="1" max="10" step="1" value="4" /></label>
-        <label>Interasse campate (m)<input type="number" id="p-interasseCampate" min="6" max="30" step="1" value="15" /></label>
-        <label>Numero pilastri per fila<input type="number" id="p-numeroPilastriPerFila" min="2" max="20" step="1" value="5" /></label>
-      </fieldset>
-      <fieldset>
-        <legend>Elementi</legend>
-        <label>Sezione pilastro (cm)
-          <select id="p-sezionePilastro">
-            <option value="30x30">30 × 30</option><option value="40x40" selected>40 × 40</option>
-            <option value="50x50">50 × 50</option><option value="60x60">60 × 60</option>
-          </select>
-        </label>
-        <label>Tipo trave
-          <select id="p-tipoTrave">
-            <option value="aT">Trave a T</option><option value="aI">Trave a I</option><option value="rettangolare">Rettangolare</option>
-          </select>
-        </label>
-        <label>Spessore pannello tamponamento (cm)<input type="number" id="p-spessorePannello" min="10" max="40" step="1" value="20" /></label>
-      </fieldset>
-    </aside>
-
-    <section class="viewport">
-      <nav class="tabs">
-        <button class="tab active" data-view="3d">3D</button>
-        <button class="tab" data-view="pianta">Pianta</button>
-        <button class="tab" data-view="prospetto">Prospetto</button>
-        <button class="tab" data-view="sezione">Sezione</button>
-        <button class="tab" data-view="distinta">Distinta</button>
-      </nav>
-      <div class="view-container">
-        <div id="view-3d" class="view active">\n          <div class="view-actions">\n            <button class="btn" id="btn-iso">Iso (1)</button>\n            <button class="btn" id="btn-top">Top (2)</button>\n            <button class="btn" id="btn-front">Front (3)</button>\n            <button class="btn" id="btn-lato">Lato (4)</button>\n            <button class="btn" id="btn-wire">Wire (W)</button>\n          </div>\n        </div>
-        <div id="view-pianta" class="view"><canvas id="canvas-pianta"></canvas></div>
-        <div id="view-prospetto" class="view"><canvas id="canvas-prospetto"></canvas></div>
-        <div id="view-sezione" class="view"><canvas id="canvas-sezione"></canvas></div>
-        <div id="view-distinta" class="view">
-          <table id="tabella-distinta"><thead><tr><th>Elemento</th><th>Quantità</th><th>Dimensioni</th><th>Volume (m³)</th><th>Peso (t)</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-    </section>
-
-    <aside class="panel panel-right">
-      <h2>Risultati</h2>
-      <div class="stat"><span class="stat-label">Superficie coperta</span><span class="stat-value" id="r-superficie">0 m²</span></div>
-      <div class="stat"><span class="stat-label">Volume calcestruzzo</span><span class="stat-value" id="r-volume">0 m³</span></div>
-      <div class="stat"><span class="stat-label">Peso totale</span><span class="stat-value" id="r-peso">0 t</span></div>
-      <div class="stat"><span class="stat-label">Numero pilastri</span><span class="stat-value" id="r-pilastri">0</span></div>
-      <h2>Avvisi</h2><ul id="lista-avvisi" class="avvisi"></ul>
-    </aside>
-  </main>
-
-  <footer class="footer"><span>CACEM · v0.1 · Modello approssimativo</span><span id="status">Pronto</span></footer>
-
-  <script type="importmap">
-  {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
-  </script>
-  <script type="module" src="js/main.js"></script>
-</body>
-</html>
+<header class="topbar"><div class="logo">CACEM</div><div class="subtitle">Configuratore Capannoni Prefabbricati in Cemento</div><div class="topbar-actions"><button id="btn-salva" class="btn">Salva</button><button id="btn-carica" class="btn">Carica</button><button id="btn-reset" class="btn btn-danger">Reset</button></div></header>
+<main class="layout">
+<aside class="panel panel-left">
+<h2>Generale</h2>
+<label>Luce (m)<input type="number" id="p-luce" min="10" max="80" step="1"></label>
+<label>Altezza pilastro (m)<input type="number" id="p-altezzaPilastro" min="4" max="12" step="0.5"></label>
+<label>Pendenza copertura (%)<input type="number" id="p-pendenzaCopertura" min="3" max="20" step="0.5"></label>
+<label class="check"><input type="checkbox" id="p-interpiano"> Interpiano (soppalco)</label>
+<label>Altezza interpiano (m)<input type="number" id="p-altezzaInterpiano" min="2" max="6" step="0.1"></label>
+<label class="check"><input type="checkbox" id="p-carroponte"> Carroponte</label>
+<label>Portata carroponte (t)<input type="number" id="p-portataCarroponte" min="0" max="30" step="1"></label>
+<h2>Campate</h2><div id="lista-campate"></div><button id="btn-aggiungiCampata" class="btn">+ Aggiungi campata</button>
+<h2>Componenti</h2>
+<label>Tipo pilastro<select id="p-tipoPilastro"></select></label>
+<label>Tipo trave<select id="p-tipoTrave"></select></label>
+<label>Tipo tegolo copertura<select id="p-tipoTegolo"></select></label>
+<h2>Pannelli tamponamento</h2>
+<label>Finitura<select id="p-finituraPannello"></select></label>
+<label>Spessore (cm)<input type="number" id="p-spessorePannello" min="20" max="28" step="4"></label>
+</aside>
+<section class="viewport"><nav class="tabs"><button class="tab active" data-view="3d">3D</button><button class="tab" data-view="pianta">Pianta</button><button class="tab" data-view="prospetto">Prospetti</button><button class="tab" data-view="sezione">Sezioni</button><button class="tab" data-view="distinta">Distinta</button></nav>
+<div class="view-container">
+<div id="view-3d" class="view active"><div class="view-actions"><button class="btn" id="btn-iso">Iso (1)</button><button class="btn" id="btn-top">Top (2)</button><button class="btn" id="btn-front">Front (3)</button><button class="btn" id="btn-lato">Lato (4)</button><button class="btn" id="btn-wire">Wire (W)</button></div></div>
+<div id="view-pianta" class="view"><div class="view-actions"><button class="btn" id="btn-reset-pianta">Reset vista</button></div><canvas id="canvas-pianta"></canvas></div>
+<div id="view-prospetto" class="view"><em class="placeholder">Prospetti — Step successivo</em></div>
+<div id="view-sezione" class="view"><em class="placeholder">Sezioni — Step successivo</em></div>
+<div id="view-distinta" class="view"><table id="tabella-distinta"><thead><tr><th>Elemento</th><th>Qtà</th><th>Dimensioni</th><th>Volume (m³)</th><th>Peso (t)</th></tr></thead><tbody></tbody></table></div>
+</div></section>
+<aside class="panel panel-right"><h2>Risultati</h2><div class="stat"><span class="stat-label">Lunghezza tot.</span><span class="stat-value" id="r-lunghezza">0 m</span></div><div class="stat"><span class="stat-label">Superficie coperta</span><span class="stat-value" id="r-superficie">0 m²</span></div><div class="stat"><span class="stat-label">Volume calcestruzzo</span><span class="stat-value" id="r-volume">0 m³</span></div><div class="stat"><span class="stat-label">Peso totale</span><span class="stat-value" id="r-peso">0 t</span></div><div class="stat"><span class="stat-label">Numero pilastri</span><span class="stat-value" id="r-pilastri">0</span></div></aside>
+</main>
+<footer class="footer"><span>CACEM · v0.3 · Catalogo + modello strutturale + pianta 2D</span><span id="status">Pronto</span></footer>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module" src="js/main.js"></script>
+</body></html>
