@@ -167,8 +167,13 @@ function deleteSelected(){
 function fit(){
  const box=new THREE.Box3().setFromObject(root);if(box.isEmpty())return;const c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3()),d=Math.max(s.x,s.y,s.z)*1.8;camera.position.set(c.x+d*.85,c.y+d*.65,c.z+d*.85);controls.target.copy(c);controls.update();
 }
+function applySectionCut(v){
+ state.items.forEach(it=>{if(!it.object)return;it.object.visible=true});
+ if(v==="sectionLong"){const cut=state.config.depth/200;state.items.forEach(it=>{if(it.object&&it.y>cut)it.object.visible=false})}
+ if(v==="sectionTrans"){const cut=state.config.bays*state.config.spacing/200;state.items.forEach(it=>{if(it.object&&it.x>cut)it.object.visible=false})}
+}
 function view(v){
- state.view=v;const box=new THREE.Box3().setFromObject(root);const c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3()),d=Math.max(s.x,s.y,s.z)*1.7;
+ state.view=v;applySectionCut(v);const box=new THREE.Box3().setFromObject(root);const c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3()),d=Math.max(s.x,s.y,s.z)*1.7;
  if(v==="plan"||v==="floor"||v==="roof"){camera.position.set(c.x,d,c.z);controls.target.set(c.x,0,c.z)}
  else if(v==="front"||v==="elev3"){camera.position.set(c.x,c.y,d);controls.target.copy(c)}
  else if(v==="elev2"||v==="elev4"){camera.position.set(d,c.y,c.z);controls.target.copy(c)}
