@@ -48,55 +48,98 @@ function animate() {
   }
 }
 
+function creaMateriale(colore) {
+  return new THREE.MeshStandardMaterial({
+    color: colore,
+    wireframe: wire
+  });
+}
+
 /*
- * Coordinate system:
- * X = longitudinal axis
- * Y = vertical height
- * Z = transverse axis
+ * Sistema di coordinate:
+ * X = lunghezza del capannone
+ * Y = altezza verticale
+ * Z = luce trasversale
  */
-function box(
-  x,
-  y,
-  z,
+
+function creaBox(
   sizeX,
   sizeY,
   sizeZ,
-  material = 0x87929d
+  x,
+  y,
+  z,
+  colore = 0x87929d
 ) {
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(sizeX, sizeY, sizeZ),
-    new THREE.MeshStandardMaterial({
-      color: material,
-      wireframe: wire
-    })
+    creaMateriale(colore)
   );
 
   mesh.position.set(x, y, z);
   group.add(mesh);
+
+  return mesh;
 }
 
-function addRoofBeam(x, z1, y1, z2, y2) {
-  const dz = z2 - z1;
-  const dy = y2 - y1;
-  const length = Math.hypot(dz, dy);
-  const angle = Math.atan2(dy, dz);
-
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, length, 0.35),
-    new THREE.MeshStandardMaterial({
-      color: 0x9ca6af,
-      wireframe: wire
-    })
+function creaFalda(
+  L,
+  W,
+  H,
+  pendenza,
+  lato
+) {
+  const rise = W * pendenza / 200;
+  const halfW = W / 2;
+  const lunghezzaFalda = Math.sqrt(
+    halfW ** 2 +
+    rise ** 2
   );
 
-  mesh.position.set(
+  const mesh = creaBox(
+    L,
+    0.20,
+    lunghezzaFalda,
+    L / 2,
+    H + rise / 2,
+    lato === "sud"
+      ? halfW / 2
+      : halfW + halfW / 2,
+    0x9ca6af
+  );
+
+  /*
+   * BoxGeometry local Z follows the sloped falda.
+   * Rotation around X changes local Z direction in the Y/Z plane.
+   */
+  const angle =
+    Math.atan2(rise, halfW);
+
+  mesh.rotation.x =
+    lato === "sud"
+      ? angle
+      : -angle;
+
+  return mesh;
+}
+
+function creaParete(
+  sizeX,
+  sizeY,
+  sizeZ,
+  x,
+  y,
+  z
+) {
+  return creaBox(
+    sizeX,
+    sizeY,
+    sizeZ,
     x,
-    (y1 + y2) / 2,
-    (z1 + z2) / 2
+    y,
+    z,
+    0x607080
   );
-
-  mesh.rotation.x = -angle;
-  group.add(mesh);
 }
 
 export function aggiornaScena3D(s) {
@@ -107,19 +150,26 @@ export function aggiornaScena3D(s) {
   }
 
   const L = s.campate.reduce(
-    (sum, campata) => sum + Number(campata.interasse || 0),
+    (sum, campata) =>
+      sum + Number(campata.interasse || 0),
     0
   );
+
   const W = Number(s.generale.luce || 0);
   const H = Number(s.generale.altezzaPilastro || 0);
-  const pendenza = Number(s.generale.pendenzaCopertura || 0);
+  const pendenza = Number(
+    s.generale.pendenzaCopertura || 0
+  );
 
-  const basePilastro = Number(s.pilastri.base || 40) / 100;
-  const profonditaPilastro =
+  const basePilastro =
+    Number(s.pilastri.base || 40) / 100;
+
+  const altezzaSezionePilastro =
     Number(s.pilastri.altezzaSezione || 60) / 100;
 
   const rise = W * pendenza / 200;
-  const ridgeY = H + rise;
+  const halfW = W / 2;
+  const Hcolmo = H + rise;
 
   const xs = [0];
   let x = 0;
@@ -129,122 +179,238 @@ export function aggiornaScena3D(s) {
     xs.push(x);
   });
 
-  // Pilastri: sezione in X/Z, altezza verticale lungo Y.
+  /*
+   * PILASTRI
+   * Entrambe le file hanno esattamente la stessa altezza H.
+   */
   xs.forEach(px => {
-    box(
-      px,
-      H / 2,
-      0,
+    creaBox(
       basePilastro,
       H,
-      profonditaPilastro
+      altezzaSezionePilastro,
+      px,
+      H / 2,
+      0
     );
 
-    box(
-      px,
-      H / 2,
-      W,
+    creaBox(
       basePilastro,
       H,
-      profonditaPilastro
+      altezzaSezionePilastro,
+      px,
+      H / 2,
+      W
     );
   });
 
-  // Travi di banchina: asse longitudinale X, quota superiore Y=H.
-  const traveH = 0.6;
+  /*
+   * TRAVI DI BANCHINA
+   * Due travi continue, parallele all'asse X, appoggiate a Y=H.
+   */
+  const traveBase =
+    Number(trovaDimensioneTrave(s, "base", 30)) / 100;
 
-  box(
-    L / 2,
-    H - traveH / 2,
-    0,
+  const traveAltezza =
+    Number(trovaDimensioneTrave(s, "altezza", 60)) / 100;
+
+  creaBox(
     L,
-    traveH,
-    0.5
+    traveAltezza,
+    traveBase,
+    L / 2,
+    H - traveAltezza / 2,
+    0
   );
 
-  box(
-    L / 2,
-    H - traveH / 2,
-    W,
+  creaBox(
     L,
-    traveH,
-    0.5
+    traveAltezza,
+    traveBase,
+    L / 2,
+    H - traveAltezza / 2,
+    W
   );
 
-  // Travi trasversali inclinate nel piano Y/Z.
+  /*
+   * TRAVI TRASVERSALI
+   * Una coppia per ogni campata, inclinata nel piano Y/Z.
+   */
   xs.forEach((px, index) => {
     if (index >= s.campate.length) return;
 
-    const span = Number(s.campate[index].interasse || 0);
+    const span = Number(
+      s.campate[index].interasse || 0
+    );
+
     const midX = px + span / 2;
 
-    addRoofBeam(midX, 0, H, W / 2, ridgeY);
-    addRoofBeam(midX, W, H, W / 2, ridgeY);
+    creaTraveTrasversale(
+      midX,
+      W,
+      H,
+      rise,
+      s
+    );
   });
 
-  const envelopeMaterial = 0x607080;
+  /*
+   * COPERTURA
+   * Esattamente due falde continue, senza strisce per campata.
+   */
+  creaFalda(
+    L,
+    W,
+    H,
+    pendenza,
+    "sud"
+  );
 
-  // Tamponamenti laterali: piani verticali X/Y.
-  box(
+  creaFalda(
+    L,
+    W,
+    H,
+    pendenza,
+    "nord"
+  );
+
+  /*
+   * PARETI CONTINUE PERIMETRALI.
+   */
+  const spessorePannello =
+    Number(s.pannelli.spessore || 0) / 100;
+
+  creaParete(
+    L,
+    H,
+    spessorePannello,
     L / 2,
     H / 2,
+    0
+  );
+
+  creaParete(
+    L,
+    H,
+    spessorePannello,
+    L / 2,
+    H / 2,
+    W
+  );
+
+  creaParete(
+    spessorePannello,
+    H,
+    W,
     0,
-    L,
-    H,
-    0.2,
-    envelopeMaterial
+    H / 2,
+    W / 2
   );
 
-  box(
+  creaParete(
+    spessorePannello,
+    H,
+    W,
+    L,
+    H / 2,
+    W / 2
+  );
+
+  /*
+   * PAVIMENTO: piano X/Z con quota superiore Y=0.
+   */
+  creaBox(
+    L,
+    0.20,
+    W,
     L / 2,
-    H / 2,
-    W,
-    L,
-    H,
-    0.2,
-    envelopeMaterial
-  );
-
-  // Testate: piani verticali Y/Z.
-  box(
-    0,
-    H / 2,
+    -0.10,
     W / 2,
-    0.2,
-    H,
-    W,
-    envelopeMaterial
-  );
-
-  box(
-    L,
-    H / 2,
-    W / 2,
-    0.2,
-    H,
-    W,
-    envelopeMaterial
-  );
-
-  // Pavimento: piano X/Z con quota superiore Y=0.
-  box(
-    L / 2,
-    -0.1,
-    W / 2,
-    L,
-    0.2,
-    W,
-    envelopeMaterial
+    0x607080
   );
 
   fit(s);
 }
 
+function trovaDimensioneTrave(s, campo, fallbackCm) {
+  const catalogo = window.CACEM_CATALOGO;
+
+  const trave =
+    catalogo?.travi?.find(
+      item => item.id === s.travi.tipoId
+    );
+
+  return Number(
+    trave?.[campo] ??
+    fallbackCm
+  );
+}
+
+function creaTraveTrasversale(
+  x,
+  W,
+  H,
+  rise,
+  s
+) {
+  const catalogo = window.CACEM_CATALOGO;
+
+  const trave =
+    catalogo?.travi?.find(
+      item => item.id === s.travi.tipoId
+    );
+
+  const base =
+    Number(trave?.base ?? 30) / 100;
+
+  const altezza =
+    Number(trave?.altezza ?? 60) / 100;
+
+  const halfW = W / 2;
+
+  const length =
+    Math.sqrt(
+      halfW ** 2 +
+      rise ** 2
+    );
+
+  const angle =
+    Math.atan2(rise, halfW);
+
+  const makeHalf = (
+    zCenter,
+    rotation
+  ) => {
+    const mesh = creaBox(
+      base,
+      altezza,
+      length,
+      x,
+      H + rise / 2,
+      zCenter,
+      0x9ca6af
+    );
+
+    mesh.rotation.x = rotation;
+  };
+
+  makeHalf(
+    halfW / 2,
+    angle
+  );
+
+  makeHalf(
+    halfW + halfW / 2,
+    -angle
+  );
+}
+
 function fit(s) {
   const L = s.campate.reduce(
-    (sum, campata) => sum + Number(campata.interasse || 0),
+    (sum, campata) =>
+      sum + Number(campata.interasse || 0),
     0
   );
+
   const W = Number(s.generale.luce || 0);
   const H = Number(s.generale.altezzaPilastro || 0);
 
@@ -268,9 +434,11 @@ export function vistaIsometrica() {
   if (!s) return;
 
   const L = s.campate.reduce(
-    (sum, campata) => sum + Number(campata.interasse || 0),
+    (sum, campata) =>
+      sum + Number(campata.interasse || 0),
     0
   );
+
   const W = Number(s.generale.luce || 0);
   const H = Number(s.generale.altezzaPilastro || 0);
 
@@ -294,9 +462,11 @@ export function vistaTop() {
   if (!s) return;
 
   const L = s.campate.reduce(
-    (sum, campata) => sum + Number(campata.interasse || 0),
+    (sum, campata) =>
+      sum + Number(campata.interasse || 0),
     0
   );
+
   const W = Number(s.generale.luce || 0);
 
   camera.position.set(
@@ -305,7 +475,12 @@ export function vistaTop() {
     W / 2
   );
 
-  controls.target.set(L / 2, 0, W / 2);
+  controls.target.set(
+    L / 2,
+    0,
+    W / 2
+  );
+
   controls.update();
 }
 
@@ -314,9 +489,11 @@ export function vistaFront() {
   if (!s) return;
 
   const L = s.campate.reduce(
-    (sum, campata) => sum + Number(campata.interasse || 0),
+    (sum, campata) =>
+      sum + Number(campata.interasse || 0),
     0
   );
+
   const H = Number(s.generale.altezzaPilastro || 0);
 
   camera.position.set(
@@ -325,7 +502,12 @@ export function vistaFront() {
     -Math.max(L, H) * 1.5
   );
 
-  controls.target.set(L / 2, H / 2, 0);
+  controls.target.set(
+    L / 2,
+    H / 2,
+    0
+  );
+
   controls.update();
 }
 
@@ -342,7 +524,12 @@ export function vistaLato() {
     W / 2
   );
 
-  controls.target.set(0, H / 2, W / 2);
+  controls.target.set(
+    0,
+    H / 2,
+    W / 2
+  );
+
   controls.update();
 }
 
