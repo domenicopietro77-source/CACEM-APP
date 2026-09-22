@@ -1,0 +1,29 @@
+[
+  {
+    "id": "AL",
+    "nome": "Tegolo AL (Alari)",
+    "tipo": "AL",
+    "larghezza": 256,
+    "altezza": 88,
+    "luceMax": 14,
+    "categoria": "copertura"
+  },
+  {
+    "id": "Y",
+    "nome": "Tegolo Y",
+    "tipo": "Y",
+    "larghezza": 200,
+    "altezza": 100,
+    "luceMax": 16,
+    "categoria": "copertura"
+  },
+  {
+    "id": "TT",
+    "nome": "Tegolo TT",
+    "tipo": "TT",
+    "larghezza": 250,
+    "altezza": 80,
+    "luceMax": 10,
+    "categoria": "copertura"
+  }
+]
