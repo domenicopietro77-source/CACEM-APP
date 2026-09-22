@@ -1,1 +1,153 @@
-import{caricaCataloghi}from'./catalogo.js';import{statoDefault,calcolaDerivati,salvaStato,caricaStato,cancellaStato,esportaJSON}from'./modello.js';import{inizializzaUI,aggiornaRisultati,mostraStatus,renderUI}from'./ui.js';import{inizializzaScena3D,aggiornaScena3D,vistaIsometrica,vistaTop,vistaFront,vistaLato,toggleWireframe,resizeScena3D}from'./scena3d.js';import{inizializzaPianta,aggiornaPianta,resetPianta}from'./pianta.js';import{aggiornaProspetti,resetProspetto}from'./prospetti.js';import{aggiornaSezioni,resetSezioni}from'./sezioni.js';import{esportaCSV}from'./distinta.js';import{esportaPiantaDXF,esportaProspettiDXF,esportaSezioniDXF}from'./export.js';let stato;const dl=(t,n,type='application/json')=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()};function change(s){stato=s;window.CACEM_STATE=s;salvaStato(s);aggiornaRisultati(s);aggiornaPianta(s);aggiornaProspetti(s);aggiornaSezioni(s);aggiornaScena3D(s)}async function init(){await caricaCataloghi();stato=caricaStato()||statoDefault();window.CACEM_STATE=stato;inizializzaUI(stato,change);inizializzaScena3D();inizializzaPianta(document.getElementById('piantaCanvas'));aggiornaRisultati(stato);aggiornaPianta(stato);aggiornaProspetti(stato);aggiornaSezioni(stato);aggiornaScena3D(stato);document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.tabview').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('tab-'+b.dataset.tab).classList.add('active');setTimeout(resizeScena3D,30)});document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>({iso:vistaIsometrica,top:vistaTop,front:vistaFront,side:vistaLato}[b.dataset.view])());document.getElementById('wireBtn').onclick=toggleWireframe;document.getElementById('resetPianta').onclick=resetPianta;document.querySelectorAll('.resetCanvas').forEach(b=>b.onclick=()=>b.dataset.canvas.startsWith('prospetto')?resetProspetto(b.dataset.canvas):resetSezioni());document.getElementById('csvBtn').onclick=()=>esportaCSV(stato);document.getElementById('dxfPiantaBtn').onclick=()=>esportaPiantaDXF(stato);document.getElementById('dxfProspettiBtn').onclick=()=>esportaProspettiDXF(stato);document.getElementById('dxfSezioniBtn').onclick=()=>esportaSezioniDXF(stato);document.getElementById('jsonBtn').onclick=()=>dl(esportaJSON(stato),'CACEM_progetto.json');document.getElementById('saveBtn').onclick=()=>{salvaStato(stato);mostraStatus('Progetto salvato nel browser')};document.getElementById('resetBtn').onclick=()=>{cancellaStato();location.reload()};document.getElementById('loadBtn').onclick=()=>document.getElementById('loadFile').click();document.getElementById('loadFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{stato=JSON.parse(r.result);window.CACEM_STATE=stato;renderUI();change(stato);mostraStatus('JSON caricato')}catch{mostraStatus('JSON non valido')}};r.readAsText(f)};window.addEventListener('resize',resizeScena3D);window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();dl(esportaJSON(stato),'CACEM_progetto.json')}})}init().catch(e=>{console.error(e);mostraStatus('Errore inizializzazione: '+e.message);if(window.__showError){window.__showError('init(): '+e.message+'\n'+(e.stack||''))}})
+// main.js — Entry point: orchestratore commesse + editor
+
+import { caricaCataloghi } from './catalogo.js';
+import {
+  mostraSchermataCommesse,
+  nuovaCommessaE,
+  salvaCommessaCorrente,
+  esportaCommessaCorrente,
+  importaCommessaDaFile,
+  aggiornaRisultati,
+  mostraStatus,
+  getStato
+} from './ui.js';
+
+import { initScena3D, aggiornaScena3D, resizeScena3D,
+         vistaIsometrica, vistaTop, vistaFront, vistaLato, toggleWireframe } from './scena3d.js';
+import { inizializzaPianta, aggiornaPianta, resetPianta } from './pianta.js';
+import { inizializzaProspetti, aggiornaProspetti, resetProspetto } from './prospetti.js';
+import { inizializzaSezioni, aggiornaSezioni, resetSezioni } from './sezioni.js';
+import { esportaCSV } from './distinta.js';
+import { esportaPiantaDXF, esportaProspettiDXF, esportaSezioniDXF } from './export.js';
+
+let moduli3DInizializzati = false;
+
+/* ============================================================
+   AVVIO
+   ============================================================ */
+
+async function avvia() {
+  try {
+    await caricaCataloghi();
+  } catch (err) {
+    console.error('Errore caricamento cataloghi:', err);
+    alert('Errore caricamento cataloghi. Controlla la console.');
+    return;
+  }
+
+  collegaPulsantiSchermataCommesse();
+
+  // Mostra schermata commesse all'avvio
+  mostraSchermataCommesse();
+}
+
+function collegaPulsantiSchermataCommesse() {
+  const btnNuova = document.getElementById('btn-nuova-commessa');
+  if (btnNuova) btnNuova.onclick = () => nuovaCommessaE();
+
+  const btnImporta = document.getElementById('btn-importa-commessa');
+  if (btnImporta) btnImporta.onclick = () => importaCommessaDaFile();
+
+  const btnSalva = document.getElementById('btn-salva');
+  if (btnSalva) btnSalva.onclick = () => salvaCommessaCorrente();
+
+  const btnEsp = document.getElementById('btn-esporta-commessa');
+  if (btnEsp) btnEsp.onclick = () => esportaCommessaCorrente();
+}
+
+/* ============================================================
+   INIZIALIZZAZIONE EDITOR (dopo apertura commessa)
+   ============================================================ */
+
+export function attivaEditor(statoIniziale) {
+  // Se i moduli 3D/2D non sono ancora stati inizializzati, fallo ora
+  if (!moduli3DInizializzati) {
+    try {
+      initScena3D();
+      inizializzaPianta(document.getElementById('piantaCanvas'));
+      inizializzaProspetti();
+      inizializzaSezioni();
+      moduli3DInizializzati = true;
+    } catch (e) {
+      console.warn('Errore init moduli:', e.message);
+    }
+    collegaTabs();
+    collegaPulsantiEditor();
+    window.addEventListener('resize', () => {
+      try { resizeScena3D(); } catch {}
+    });
+  }
+
+  // Aggiorna tutti i moduli con lo stato corrente
+  const s = statoIniziale || getStato();
+  if (!s) return;
+  try { aggiornaScena3D(s); } catch (e) { console.warn('3D:', e.message); }
+  try { aggiornaPianta(s); } catch (e) { console.warn('Pianta:', e.message); }
+  try { aggiornaProspetti(s); } catch (e) { console.warn('Prospetti:', e.message); }
+  try { aggiornaSezioni(s); } catch (e) { console.warn('Sezioni:', e.message); }
+  try { aggiornaRisultati(s); } catch (e) { console.warn('Risultati:', e.message); }
+}
+
+// Collega i tab e i pulsanti dell'editor (una sola volta)
+function collegaTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      const view = document.getElementById('view-' + tab.dataset.view);
+      if (view) view.classList.add('active');
+
+      const v = tab.dataset.view;
+      const s = getStato();
+      if (v === '3d') setTimeout(() => resizeScena3D(), 50);
+      if (v === 'pianta') setTimeout(() => { if (s) aggiornaPianta(s); }, 50);
+      if (v === 'prospetto') setTimeout(() => { if (s) aggiornaProspetti(s); }, 50);
+      if (v === 'sezione') setTimeout(() => { if (s) aggiornaSezioni(s); }, 50);
+      if (v === 'distinta') setTimeout(() => { if (s) aggiornaRisultati(s); }, 50);
+    };
+  });
+}
+
+function collegaPulsantiEditor() {
+  const b = (id) => document.getElementById(id);
+
+  if (b('btn-iso')) b('btn-iso').onclick = () => vistaIsometrica();
+  if (b('btn-top')) b('btn-top').onclick = () => vistaTop();
+  if (b('btn-front')) b('btn-front').onclick = () => vistaFront();
+  if (b('btn-lato')) b('btn-lato').onclick = () => vistaLato();
+  if (b('btn-wire')) b('btn-wire').onclick = () => toggleWireframe();
+  if (b('btn-reset-pianta')) b('btn-reset-pianta').onclick = () => resetPianta();
+
+  document.querySelectorAll('.resetCanvas').forEach(btn => {
+    btn.onclick = () => {
+      const canvas = btn.dataset.canvas;
+      if (canvas && canvas.startsWith('prospetto')) resetProspetto(canvas);
+      else if (canvas && canvas.startsWith('sezione')) resetSezioni();
+    };
+  });
+
+  if (b('btn-export-csv')) b('btn-export-csv').onclick = () => esportaCSV(getStato());
+  if (b('btn-export-dxf-pianta')) b('btn-export-dxf-pianta').onclick = () => esportaPiantaDXF(getStato());
+  if (b('btn-export-dxf-prospetti')) b('btn-export-dxf-prospetti').onclick = () => esportaProspettiDXF(getStato());
+  if (b('btn-export-dxf-sezioni')) b('btn-export-dxf-sezioni').onclick = () => esportaSezioniDXF(getStato());
+  if (b('btn-export-json')) b('btn-export-json').onclick = () => {
+    const s = getStato();
+    if (!s) return;
+    const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cacem-progetto.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+}
+
+/* ============================================================
+   AVVIO APP
+   ============================================================ */
+
+avvia();
+
+window.attivaEditor = attivaEditor;
