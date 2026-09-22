@@ -57,8 +57,8 @@ function rebuildModel(){
  // longitudinal beams
  for(let i=0;i<c.bays;i++){
    const x=i*sx+sx/2;
-   state.items.push(item("BL"+i,"TRAVI",c.beamLong,x,0,h,w/100, c.beamW/100,sx));
-   state.items.push(item("BLB"+i,"TRAVI",c.beamLong,x,dep,h,w/100,c.beamW/100,sx));
+   state.items.push(item("BL"+i,"TRAVI",c.beamLong,x,0,h,sx,c.beamW/100,c.beamH/100));
+   state.items.push(item("BLB"+i,"TRAVI",c.beamLong,x,dep,h,sx,c.beamW/100,c.beamH/100));
  }
  // transverse roof beams/rafters
  for(let i=0;i<=c.bays;i++){
