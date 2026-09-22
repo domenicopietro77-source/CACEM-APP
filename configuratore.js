@@ -52,7 +52,7 @@ function renderModel(){
 function makeGrid(){
  const old=scene.getObjectByName("sourceGrid"); if(old) scene.remove(old);
  if(!state.grid)return;
- const p=state.project.mainPlan, minX=Math.min(...p.pillarCenterX),maxX=Math.max(...p.pillarCenterX),minY=Math.min(...p.pillarCenterX),maxY=Math.max(...p.pillarCenterX);
+ const p=state.project.mainPlan, minX=Math.min(...p.pillarCenterX),maxX=Math.max(...p.pillarCenterX);
  const g=new THREE.GridHelper(Math.max(maxX-minX,20)*1.25,20,0x9ba5aa,0xc5cdd1);
  g.name="sourceGrid"; g.position.set((maxX-minX)/2,0,(p.bottomRowY-p.topRowY)/2); scene.add(g);
 }
@@ -116,5 +116,5 @@ $("#export").onclick=()=>updateStatus("Esportazione DXF: verrà collegata al mod
 $("#save").onclick=()=>{localStorage.cacemSourceModel=JSON.stringify(state.items.map(x=>({...x,object:undefined})));updateStatus("Modello sorgente salvato")};
 $("#applyGrid").onclick=()=>updateStatus("La maglia del progetto sorgente non viene sostituita da una maglia generica");
 $("#delete").onclick=()=>updateStatus("Eliminazione disponibile dopo la definizione semantica dell'elemento");
-$("#addLevel").onclick=()=>updateStatus("Interpia​no: usare la scheda e la carpenteria sorgente");
+$("#addLevel").onclick=()=>updateStatus("Interpi​ano: usare la scheda e la carpenteria sorgente");
 init(); loadSource().catch(e=>updateStatus("Errore caricamento modello sorgente: "+e.message));
