@@ -1,7 +1,81 @@
-import Drawing from 'https://cdn.jsdelivr.net/npm/dxf-writer@1.18.4/src/Drawing.js';
-function save(d,n){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d.toDxfString()],{type:'application/dxf'}));a.download=n;a.click()}
-function base(){const d=new Drawing();d.setUnits('Meters');d.addLayer('CACEM',Drawing.ACI.WHITE,'CONTINUOUS');d.setActiveLayer('CACEM');return d}
-function rect(d,x,y,w,h){d.drawLine(x,y,x+w,y);d.drawLine(x+w,y,x+w,y+h);d.drawLine(x+w,y+h,x,y+h);d.drawLine(x,y+h,x,y)}
-export function esportaPiantaDXF(s){const d=base(),L=s.campate.reduce((a,c)=>a+c.interasse,0),W=s.generale.luce;rect(d,0,0,L,W);let x=0;s.campate.forEach(c=>{d.drawLine(x,0,x,W);x+=c.interasse});d.drawText(0,W+1,.25,0,'CACEM - PIANTA');save(d,'CACEM_pianta.dxf')}
-export function esportaProspettiDXF(s){const d=base(),L=s.campate.reduce((a,c)=>a+c.interasse,0),W=s.generale.luce,H=s.generale.altezzaPilastro;for(let k=0;k<4;k++){const off=k*(H+W+5),C=k<2?L:W;rect(d,0,off,C,H);if(k>=2){const top=off+H+W*s.generale.pendenzaCopertura/200;d.drawLine(0,off+H,C/2,top);d.drawLine(C/2,top,C,off+H)}}save(d,'CACEM_prospetti.dxf')}
-export function esportaSezioniDXF(s){const d=base(),L=s.campate.reduce((a,c)=>a+c.interasse,0),W=s.generale.luce,H=s.generale.altezzaPilastro,top=H+W*s.generale.pendenzaCopertura/200;d.drawLine(0,0,L,0);d.drawLine(0,H,L,H);d.drawLine(0,H,W/2,top);d.drawLine(W/2,top,W,H);save(d,'CACEM_sezioni.dxf')}
+function save(d, n) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(
+    new Blob([d.toDxfString()], { type: "application/dxf" })
+  );
+  a.download = n;
+  a.click();
+}
+
+function base() {
+  if (!window.DXF || !window.DXF.Drawing) {
+    throw new Error("dxf-writer non disponibile: window.DXF.Drawing non trovato.");
+  }
+
+  const d = new window.DXF.Drawing();
+  d.setUnits("Meters");
+  d.addLayer("CACEM", window.DXF.Drawing.ACI.WHITE, "CONTINUOUS");
+  d.setActiveLayer("CACEM");
+  return d;
+}
+
+function rect(d, x, y, w, h) {
+  d.drawLine(x, y, x + w, y);
+  d.drawLine(x + w, y, x + w, y + h);
+  d.drawLine(x + w, y + h, x, y + h);
+  d.drawLine(x, y + h, x, y);
+}
+
+export function esportaPiantaDXF(s) {
+  const d = base();
+  const L = s.campate.reduce((a, c) => a + c.interasse, 0);
+  const W = s.generale.luce;
+
+  rect(d, 0, 0, L, W);
+
+  let x = 0;
+  s.campate.forEach(c => {
+    d.drawLine(x, 0, x, W);
+    x += c.interasse;
+  });
+
+  d.drawText(0, W + 1, 0.25, 0, "CACEM - PIANTA");
+  save(d, "CACEM_pianta.dxf");
+}
+
+export function esportaProspettiDXF(s) {
+  const d = base();
+  const L = s.campate.reduce((a, c) => a + c.interasse, 0);
+  const W = s.generale.luce;
+  const H = s.generale.altezzaPilastro;
+
+  for (let k = 0; k < 4; k++) {
+    const off = k * (H + W + 5);
+    const C = k < 2 ? L : W;
+
+    rect(d, 0, off, C, H);
+
+    if (k >= 2) {
+      const top = off + H + W * s.generale.pendenzaCopertura / 200;
+      d.drawLine(0, off + H, C / 2, top);
+      d.drawLine(C / 2, top, C, off + H);
+    }
+  }
+
+  save(d, "CACEM_prospetti.dxf");
+}
+
+export function esportaSezioniDXF(s) {
+  const d = base();
+  const L = s.campate.reduce((a, c) => a + c.interasse, 0);
+  const W = s.generale.luce;
+  const H = s.generale.altezzaPilastro;
+  const top = H + W * s.generale.pendenzaCopertura / 200;
+
+  d.drawLine(0, 0, L, 0);
+  d.drawLine(0, H, L, H);
+  d.drawLine(0, H, W / 2, top);
+  d.drawLine(W / 2, top, W, H);
+
+  save(d, "CACEM_sezioni.dxf");
+}
