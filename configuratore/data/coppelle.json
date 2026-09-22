@@ -1,9 +1,1 @@
-{
-  "descrizione":"Catalogo coppelle",
-  "coppelle":[
-    {"id":"CCP","nome":"Coppella cemento curva piccola","tipo":"cemento","larghezza":30,"altezza":15},
-    {"id":"CCG","nome":"Coppella cemento curva grande","tipo":"cemento","larghezza":40,"altezza":20},
-    {"id":"CCS","nome":"Coppella cemento curva speciale","tipo":"cemento","larghezza":50,"altezza":25},
-    {"id":"CL","nome":"Coppella lamiera","tipo":"lamiera","larghezza":40,"altezza":20}
-  ]
-}
+{"descrizione":"Catalogo coppelle","coppelle":[{"id":"CCP","nome":"Coppella cemento curva piccola","tipo":"cemento","larghezza":30,"altezza":15},{"id":"CCG","nome":"Coppella cemento curva grande","tipo":"cemento","larghezza":40,"altezza":20},{"id":"CCS","nome":"Coppella cemento curva speciale","tipo":"cemento","larghezza":50,"altezza":25},{"id":"CL","nome":"Coppella lamiera","tipo":"lamiera","larghezza":40,"altezza":20}]}
