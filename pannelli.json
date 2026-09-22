@@ -1,0 +1,50 @@
+{
+  "descrizione": "Catalogo pannelli tamponamento CACEM",
+  "spessori": [20, 24, 28],
+  "tolleranze": {
+    "20": 1,
+    "24": 1,
+    "28": 2
+  },
+  "tipi": [
+    {
+      "id": "V",
+      "nome": "Verticale",
+      "sigla": "V"
+    },
+    {
+      "id": "O",
+      "nome": "Orizzontale",
+      "sigla": "O"
+    }
+  ],
+  "finiture": [
+    {
+      "id": "FV",
+      "nome": "Faccia vista",
+      "sigla": "FV",
+      "coloriDefault": ["#d0cbc0"],
+      "graniglia": false
+    },
+    {
+      "id": "GR",
+      "nome": "Granigliato 2 colori",
+      "sigla": "GR",
+      "coloriDefault": ["#d9d2c5", "#b8b0a0"],
+      "percentualiDefault": [70, 30],
+      "graniglia": true
+    }
+  ],
+  "coloriGraniglia": {
+    "catalogo": [
+      { "id": "bianco", "nome": "Bianco", "hex": "#e8e4dc" },
+      { "id": "grigio_chiaro", "nome": "Grigio chiaro", "hex": "#c8c4bc" },
+      { "id": "grigio_scuro", "nome": "Grigio scuro", "hex": "#8a8a8a" },
+      { "id": "sabbia", "nome": "Sabbia", "hex": "#d9cfb8" },
+      { "id": "rosso_mattone", "nome": "Rosso mattone", "hex": "#a84a3c" },
+      { "id": "beige", "nome": "Beige", "hex": "#d0c4a8" },
+      { "id": "verde_scuro", "nome": "Verde scuro", "hex": "#4a5a48" },
+      { "id": "blu", "nome": "Blu", "hex": "#4a5a7a" }
+    ]
+  }
+}
