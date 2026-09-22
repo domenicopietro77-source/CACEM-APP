@@ -1,12 +1,9 @@
-// modello.js — Stato del capannone, calcoli derivati, persistenza
+// modello.js — Stato capannone (v5 - stile AutoCAD)
 
 import { trovaPilastro, trovaTrave, trovaTegolo, trovaFondazione } from './catalogo.js';
 
-const CHIAVE = 'cacem-stato-v4';
+const CHIAVE = 'cacem-stato-v5';
 
-/**
- * Stato di default del capannone.
- */
 export function statoDefault() {
   return {
     generale: {
@@ -16,7 +13,8 @@ export function statoDefault() {
       interpiano: false,
       altezzaInterpiano: 4,
       carroponte: false,
-      portataCarroponte: 10
+      portataCarroponte: 10,
+      edificioEsistente: null
     },
     campate: [
       { id: 1, interasse: 15 },
@@ -29,7 +27,8 @@ export function statoDefault() {
       altezzaSezione: 40,
       pluviale: true,
       pluvialeDiametro: 100,
-      fondazione: 'bicchiere_pluviale'
+      fondazione: 'bicchiere_pluviale',
+      sigle: []
     },
     travi: {
       tipoBanchina: 'TL',
@@ -49,36 +48,95 @@ export function statoDefault() {
       coloriGraniglia: ['#d9d2c5', '#b8b0a0'],
       percentualiGraniglia: [70, 30],
       lati: {
-        sud:  { attivo: true, apertura: [] },
-        est:  { attivo: true, apertura: [] },
-        nord: { attivo: true, apertura: [] },
-        ovest:{ attivo: true, apertura: [] }
+        sud:  { attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] },
+        est:  { attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] },
+        nord: { attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] },
+        ovest:{ attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] }
       }
     },
     meta: {
-      versione: '4.0',
-      timestamp: null
+      versione: '5.0',
+      timestamp: null,
+      nome: 'Nuova commessa'
     }
   };
 }
 
-/**
- * Clona stato in modo profondo.
- */
 export function clonaStato(s) {
   return JSON.parse(JSON.stringify(s));
 }
 
-/**
- * Lunghezza totale del capannone (somma interassi).
- */
 export function lunghezzaTotale(stato) {
   return stato.campate.reduce((a, c) => a + Number(c.interasse || 0), 0);
 }
 
 /**
- * Calcolo derivati: geometria, volumi, pesi, distinta.
- * Retrocompatibile con la struttura precedente.
+ * Classifica i pilastri in sigle PP1, PP2, PP3... in base a:
+ * - angolo vs intermedio
+ * - presenza pluviale
+ * - tipo fondazione
+ * - presenza mensole
+ * Pilastri con stesse caratteristiche → stesso PP
+ */
+export function classificaPilastri(stato) {
+  const L = lunghezzaTotale(stato);
+  const W = stato.generale.luce;
+  const numPerFila = stato.campate.length + 1;
+  const pilastri = [];
+
+  const caratteristica = (tipoPos) => {
+    const car = {
+      posizione: tipoPos,
+      pluviale: tipoPos === 'angolo' ? stato.pilastri.pluviale : false,
+      fondazione: tipoPos === 'angolo' 
+        ? stato.pilastri.fondazione 
+        : 'bicchiere_centrale',
+      mensole: stato.generale.carroponte && tipoPos === 'intermedio_lungo' 
+        ? 'carroponte' 
+        : 'nessuna',
+      sezione: stato.pilastri.base + 'x' + stato.pilastri.altezzaSezione
+    };
+    return JSON.stringify(car);
+  };
+
+  const mappaCar = new Map();
+  let contatore = 1;
+
+  const assegna = (x, y, tipoPos) => {
+    const car = caratteristica(tipoPos);
+    if (!mappaCar.has(car)) {
+      mappaCar.set(car, 'PP' + contatore);
+      contatore++;
+    }
+    return {
+      x, y,
+      sigla: mappaCar.get(car),
+      tipoPos,
+      caratteristica: JSON.parse(car)
+    };
+  };
+
+  // Fila Sud (y=0): angolo SX, intermedi, angolo DX
+  let accX = 0;
+  for (let i = 0; i < numPerFila; i++) {
+    const tipoPos = (i === 0 || i === numPerFila - 1) ? 'angolo' : 'intermedio_lungo';
+    pilastri.push(assegna(accX, 0, tipoPos));
+    if (i < stato.campate.length) accX += stato.campate[i].interasse;
+  }
+
+  // Fila Nord (y=W): stessa cosa
+  accX = 0;
+  for (let i = 0; i < numPerFila; i++) {
+    const tipoPos = (i === 0 || i === numPerFila - 1) ? 'angolo' : 'intermedio_lungo';
+    pilastri.push(assegna(accX, W, tipoPos));
+    if (i < stato.campate.length) accX += stato.campate[i].interasse;
+  }
+
+  return { pilastri, mappa: Array.from(mappaCar.entries()) };
+}
+
+/**
+ * Calcola derivati (volumi, pesi, distinta).
  */
 export function calcolaDerivati(stato) {
   const g = stato.generale;
@@ -88,65 +146,43 @@ export function calcolaDerivati(stato) {
   const salita = (W / 2) * (g.pendenzaCopertura / 100);
   const Hcolmo = H + salita;
 
-  // --- Pilastri ---
   const numPerFila = stato.campate.length + 1;
   const numPilastri = numPerFila * 2;
+
   const baseP = (stato.pilastri.base || 40) / 100;
   const altP = (stato.pilastri.altezzaSezione || 40) / 100;
-  const volPilSingolo = baseP * altP * H;
-  const volPilastri = volPilSingolo * numPilastri;
+  const volPilastri = baseP * altP * H * numPilastri;
 
-  // --- Travi di banchina (2, una per lato) ---
-  const tra = trovaTrave(stato.travi.tipoBanchina) || trovaTrave('TL');
-  const altTraveM = (tra ? tra.altezza : 60) / 100;
-  const baseTraveM = (tra ? tra.base : 40) / 100;
+  const tra = trovaTrave(stato.travi.tipoBanchina) || { base: 40, altezza: 60 };
+  const altTraveM = (tra.altezza || 60) / 100;
+  const baseTraveM = (tra.base || 40) / 100;
   const volTraveBanchina = L * baseTraveM * altTraveM * 2;
 
-  // --- Travi trasversali (per campata, due falde) ---
-  const numTraviTrasv = stato.campate.length * 2;
-  const lungTraveTrasv = Math.sqrt((W / 2) ** 2 + salita ** 2);
-  const volTraveTrasvSingola = lungTraveTrasv * baseTraveM * altTraveM;
-  const volTraviTrasv = volTraveTrasvSingola * numTraviTrasv;
-
-  // --- Tegoli copertura ---
-  const teg = trovaTegolo(stato.copertura.tegoloId) || trovaTegolo('AL');
-  const numTegoliPerFalda = Math.ceil(L / ((teg ? teg.larghezza : 250) / 100));
-  const numTegoli = numTegoliPerFalda * 2;
   const lungFalda = Math.sqrt((W / 2) ** 2 + salita ** 2);
-  const volTegoloSingolo = ((teg ? teg.larghezza : 250) / 100) * 
-                           ((teg ? teg.altezza : 12) / 100) * lungFalda;
-  const volTegoli = volTegoloSingolo * numTegoli;
+  const numTraviTrasv = stato.campate.length * 2;
+  const volTraviTrasv = lungFalda * baseTraveM * altTraveM * numTraviTrasv;
 
-  // --- Pannelli tamponamento (4 lati) ---
+  const teg = trovaTegolo(stato.copertura.tegoloId) || { larghezza: 250, altezza: 12 };
+  const numTegoliPerFalda = Math.ceil(L / ((teg.larghezza || 250) / 100));
+  const numTegoli = numTegoliPerFalda * 2;
+  const volTegoli = ((teg.larghezza || 250) / 100) * ((teg.altezza || 12) / 100) * lungFalda * numTegoli;
+
   const spPannM = stato.pannelli.spessore / 100;
   const perimetro = 2 * (L + W);
   const volPannelli = perimetro * H * spPannM;
 
-  // --- Interpiano (se attivo) ---
   let volInterpiano = 0;
-  if (g.interpiano) {
-    const spSolaio = 0.25;
-    volInterpiano = L * W * spSolaio;
-  }
+  if (g.interpiano) volInterpiano = L * W * 0.25;
 
-  // --- Fondazioni (stima) ---
   const largFond = Math.max(baseP * 1.8, 0.8);
-  const altFond = 0.8;
-  const volFondSingolo = largFond * largFond * altFond;
-  const volFondazioni = volFondSingolo * numPilastri;
+  const volFondazioni = largFond * largFond * 0.8 * numPilastri;
 
-  // --- Volume totale ---
-  const volTotale = volPilastri + volTraveBanchina + volTraviTrasv + 
-                    volTegoli + volPannelli + volInterpiano + volFondazioni;
-  const densita = 2.5;
-  const pesoStimato = volTotale * densita;
+  const volTotale = volPilastri + volTraveBanchina + volTraviTrasv + volTegoli + volPannelli + volInterpiano + volFondazioni;
+  const pesoStimato = volTotale * 2.5;
 
   return {
     L, W, H, Hcolmo, salita,
-    numPilastri,
-    numPerFila,
-    numTegoli,
-    lungFalda,
+    numPilastri, numPerFila, numTegoli, lungFalda,
     superficieCoperta: L * W,
     volumeTotale: volTotale,
     pesoStimato,
@@ -163,9 +199,6 @@ export function calcolaDerivati(stato) {
   };
 }
 
-/**
- * Salva lo stato in localStorage.
- */
 export function salvaStato(s) {
   const copia = clonaStato(s);
   copia.meta.timestamp = new Date().toISOString();
@@ -173,55 +206,19 @@ export function salvaStato(s) {
   return copia;
 }
 
-/**
- * Carica lo stato da localStorage, con migrazione da versioni vecchie.
- */
 export function caricaStato() {
   const raw = localStorage.getItem(CHIAVE);
-  if (!raw) {
-    // Prova a migrare da vecchie versioni
-    const vecchio = localStorage.getItem('cacem-stato-v3');
-    if (vecchio) {
-      try {
-        const v3 = JSON.parse(vecchio);
-        return migraV3aV4(v3);
-      } catch { return null; }
-    }
-    return null;
-  }
+  if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw);
-    if (!parsed.generale || !parsed.campate) return null;
-    return parsed;
+    const p = JSON.parse(raw);
+    if (!p.generale || !p.campate) return null;
+    return p;
   } catch { return null; }
-}
-
-/**
- * Migrazione da versione 3 a versione 4.
- */
-function migraV3aV4(v3) {
-  const nuovo = statoDefault();
-  if (v3.generale) {
-    Object.assign(nuovo.generale, v3.generale);
-  }
-  if (v3.campate && Array.isArray(v3.campate)) {
-    nuovo.campate = v3.campate;
-  }
-  if (v3.pilastri) {
-    if (v3.pilastri.base) nuovo.pilastri.base = v3.pilastri.base;
-    if (v3.pilastri.altezzaSezione) nuovo.pilastri.altezzaSezione = v3.pilastri.altezzaSezione;
-  }
-  if (v3.travi && v3.travi.tipoId) {
-    nuovo.travi.tipoBanchina = v3.travi.tipoId;
-  }
-  if (v3.copertura && v3.copertura.tegoloId) {
-    nuovo.copertura.tegoloId = v3.copertura.tegoloId;
-  }
-  return nuovo;
 }
 
 export function cancellaStato() {
   localStorage.removeItem(CHIAVE);
+  localStorage.removeItem('cacem-stato-v4');
   localStorage.removeItem('cacem-stato-v3');
 }
 
