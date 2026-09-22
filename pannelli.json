@@ -1,1 +1,94 @@
-{"spessori":[20,24,28],"finiture":[{"id":"FV","nome":"Faccia vista"},{"id":"GR","nome":"Granigliato","coloriDefault":["#d8d8d8","#b0b0b0"],"percentuali":[70,30]}],"tipi":[{"id":"V","nome":"Verticale"},{"id":"O","nome":"Orizzontale"}]}
+{
+  "descrizione": "Catalogo pannelli tamponamento prefabbricati",
+  "spessori": [20, 24, 28],
+  "tipi": [
+    {
+      "id": "V",
+      "nome": "Verticale",
+      "sigla": "V",
+      "descrizione": "Pannello verticale, altezza intera pilastro"
+    },
+    {
+      "id": "O",
+      "nome": "Orizzontale",
+      "sigla": "O",
+      "descrizione": "Pannello orizzontale, altezza multipla"
+    }
+  ],
+  "finiture": [
+    {
+      "id": "FV",
+      "nome": "Faccia vista",
+      "sigla": "FV",
+      "descrizione": "Cemento faccia vista liscio",
+      "coloriDefault": ["#d0cbc0"],
+      "graniglia": false
+    },
+    {
+      "id": "GR",
+      "nome": "Granigliato 2 colori",
+      "sigla": "GR",
+      "descrizione": "Cemento granigliato con due colori miscelati",
+      "coloriDefault": ["#d9d2c5", "#b8b0a0"],
+      "percentualiDefault": [70, 30],
+      "graniglia": true,
+      "granulometrie": [
+        { "id": "fine", "nome": "Fine", "mm": 3 },
+        { "id": "media", "nome": "Media", "mm": 6 },
+        { "id": "grossa", "nome": "Grossa", "mm": 10 }
+      ]
+    }
+  ],
+  "altezzeStd": [240, 644, 1200, 1665, 2400, 3000, 4000, 5000, 6000],
+  "altezzeNota": "Valori in mm. Usare multipli o combinazioni per ottenere altezze diverse",
+  "elementiSpeciali": [
+    {
+      "id": "ANG",
+      "nome": "Pannello angolo",
+      "sigla": "ANG",
+      "descrizione": "Elemento d'angolo per collegamento tra due pareti",
+      "utilizzo": "Spigoli perimetrali del capannone"
+    },
+    {
+      "id": "COR",
+      "nome": "Cornice superiore",
+      "sigla": "COR",
+      "descrizione": "Elemento di finitura superiore (cornicione)",
+      "utilizzo": "Bordo superiore perimetrale sotto la copertura"
+    },
+    {
+      "id": "BAS",
+      "nome": "Pannello base",
+      "sigla": "BAS",
+      "descrizione": "Pannello di base a contatto con pavimento",
+      "utilizzo": "Parte inferiore della parete"
+    },
+    {
+      "id": "ZOC",
+      "nome": "Zoccolo",
+      "sigla": "ZOC",
+      "descrizione": "Zoccolo di protezione alla base",
+      "utilizzo": "Elemento di protezione urti"
+    }
+  ],
+  "apertureAmmesse": {
+    "porte": true,
+    "finestre": true,
+    "portoni": true,
+    "lucernari": true,
+    "note": "Le aperture vengono ritagliate nel pannello. Configurabili in aperture.json"
+  },
+  "coloriGraniglia": {
+    "catalogo": [
+      { "id": "bianco", "nome": "Bianco", "hex": "#e8e4dc" },
+      { "id": "grigio_chiaro", "nome": "Grigio chiaro", "hex": "#c8c4bc" },
+      { "id": "grigio_scuro", "nome": "Grigio scuro", "hex": "#8a8a8a" },
+      { "id": "sabbia", "nome": "Sabbia", "hex": "#d9cfb8" },
+      { "id": "rosso_mattone", "nome": "Rosso mattone", "hex": "#a84a3c" },
+      { "id": "beige", "nome": "Beige", "hex": "#d0c4a8" },
+      { "id": "verde_scuro", "nome": "Verde scuro", "hex": "#4a5a48" },
+      { "id": "blu", "nome": "Blu", "hex": "#4a5a7a" }
+    ],
+    "nota": "Scegliere 2 colori e le loro percentuali (es. 70/30)"
+  }
+}
