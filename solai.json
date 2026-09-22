@@ -1,1 +1,62 @@
-[{"id":"TT","nome":"TT","larghezza":2.50,"altezza":0.25,"luceMax":12},{"id":"LL","nome":"Lastre LL","larghezza":1.20,"altezza":0.20,"luceMax":10}]
+[
+  {
+    "id": "TT45",
+    "nome": "Solaio TT 45",
+    "sigla": "TT 45",
+    "tipo": "TT",
+    "larghezza": 45,
+    "altezza": 20,
+    "luceMax": 8,
+    "pesoLineare": 0.18,
+    "categoria": "solaio",
+    "utilizzo": "Solaio interpiano per luci ridotte",
+    "descrizione": "Lastra TT con nervature, larghezza 45 cm",
+    "materiale": "calcestruzzo precompresso",
+    "portata": "leggera"
+  },
+  {
+    "id": "TT80",
+    "nome": "Solaio TT 80",
+    "sigla": "TT 80",
+    "tipo": "TT",
+    "larghezza": 80,
+    "altezza": 25,
+    "luceMax": 10,
+    "pesoLineare": 0.30,
+    "categoria": "solaio",
+    "utilizzo": "Solaio interpiano standard",
+    "descrizione": "Lastra TT con nervature, larghezza 80 cm",
+    "materiale": "calcestruzzo precompresso",
+    "portata": "media"
+  },
+  {
+    "id": "LL120",
+    "nome": "Lastra LL 120",
+    "sigla": "LL 120",
+    "tipo": "LL",
+    "larghezza": 120,
+    "altezza": 20,
+    "luceMax": 8,
+    "pesoLineare": 0.24,
+    "categoria": "solaio",
+    "utilizzo": "Lastra piana per solaio interpiano",
+    "descrizione": "Lastra piana in c.a.p., larghezza 120 cm",
+    "materiale": "calcestruzzo precompresso",
+    "portata": "media"
+  },
+  {
+    "id": "LL120H30",
+    "nome": "Lastra LL 120 H30",
+    "sigla": "LL 120 H30",
+    "tipo": "LL",
+    "larghezza": 120,
+    "altezza": 30,
+    "luceMax": 10,
+    "pesoLineare": 0.36,
+    "categoria": "solaio",
+    "utilizzo": "Lastra piana per luci maggiori",
+    "descrizione": "Lastra piana in c.a.p. con altezza 30 cm",
+    "materiale": "calcestruzzo precompresso",
+    "portata": "pesante"
+  }
+]
