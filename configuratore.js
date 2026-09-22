@@ -44,6 +44,7 @@ function applyConfigRules(){
     const e=$("#"+id); if(!e)return;
     const enable=ids.has(id);
     e.disabled=!enable;
+    if(!enable && e.type==="checkbox") e.checked=false;
     e.closest(".row")?.classList.toggle("disabled",!enable);
     if(e.type==="checkbox") e.closest("label")?.classList.toggle("disabled",!enable);
   });
