@@ -1,0 +1,10 @@
+{
+  "descrizione": "Catalogo pilastri prefabbricati in c.a. — valori plausibili da raffinare",
+  "pilastri": [
+    {"id":"P30x30","nome":"Pilastro 30×30","sezione":{"l":30,"h":30},"altezzeStd":[4,5,6,7,8],"tipo":"rettangolare","pluvialeDiametro":80,"fondazione":"bicchiere","pesoLineare":0.225,"note":"Per carichi leggeri, no carroponte"},
+    {"id":"P40x40","nome":"Pilastro 40×40","sezione":{"l":40,"h":40},"altezzeStd":[4,5,6,7,8,9,10],"tipo":"rettangolare","pluvialeDiametro":100,"fondazione":"bicchiere","pesoLineare":0.4,"note":"Standard per capannoni industriali medi"},
+    {"id":"P40x60","nome":"Pilastro 40×60","sezione":{"l":40,"h":60},"altezzeStd":[6,7,8,9,10,11,12],"tipo":"rettangolare","pluvialeDiametro":100,"fondazione":"bicchiere","pesoLineare":0.6,"note":"Per campate oltre 25 m o carroponte leggero"},
+    {"id":"P50x50","nome":"Pilastro 50×50","sezione":{"l":50,"h":50},"altezzeStd":[6,7,8,9,10,11,12],"tipo":"rettangolare","pluvialeDiametro":100,"fondazione":"bicchiere","pesoLineare":0.625,"note":"Per carichi elevati"},
+    {"id":"P50x70","nome":"Pilastro 50×70","sezione":{"l":50,"h":70},"altezzeStd":[7,8,9,10,11,12],"tipo":"rettangolare","pluvialeDiametro":120,"fondazione":"armatubo","pesoLineare":0.875,"note":"Per carroponte pesante (fino a 20t)"}
+  ]
+}
