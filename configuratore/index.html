@@ -1,1 +1,89 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CACEM Configuratore Modulare</title><link rel="stylesheet" href="./style.css"><script src="https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.179.1/examples/js/controls/OrbitControls.js"></script></head><body><main><header><b>CACEM CONFIGURATORE</b><div><button id="salva">SALVA</button><button id="carica">CARICA</button><button id="json">JSON</button><button id="dxf">DXF</button><button id="csv">CSV</button></div></header><section class="layout"><aside><h3>PARAMETRI</h3><label>Lunghezza <input id="lunghezza" type="number"></label><label>Larghezza <input id="larghezza" type="number"></label><label>Altezza pilastro <input id="altezzaPilastro" type="number"></label><label>Altezza totale <input id="altezzaTotale" type="number"></label><label>Pendenza copertura % <input id="pendenzaCopertura" type="number"></label><label>Campate <input id="numeroCampate" type="number"></label><label>Interasse campate <input id="interasseCampate" type="number"></label><label>Trave <select id="traveTipo"><option>aT</option><option>aI</option></select></label><label>Pannello <select id="pannelloTipo"><option>sandwich</option><option>pieno</option></select></label><label>Copertura <select id="coperturaTipo"><option>tegolo</option><option>lastra</option></select></label><div><button id="calcola">CALCOLA</button><button id="reset">RESET</button></div></aside><section><nav><button data-view="3d">3D</button><button data-view="pianta">PIANTA</button><button data-view="prospetto">PROSPETTO</button><button data-view="sezione">SEZIONE</button><button data-view="distinta">DISTINTA</button></nav><div id="view3d"></div><canvas id="canvas2d" width="900" height="600" hidden></canvas><div class="bom" hidden><table><thead><tr><th>Elemento</th><th>Qtà</th><th>Dimensioni</th><th>m³</th><th>t</th></tr></thead><tbody id="bom"></tbody></table></div></section><aside><h3>RISULTATI</h3><div>Peso totale <b id="peso">0</b></div><h4>Avvisi e validazione</h4><div id="errors"></div></aside></section></main><script type="module" src="./main.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CACEM · Configuratore Capannoni Prefabbricati</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">CACEM</div>
+    <div class="subtitle">Configuratore Capannoni Prefabbricati in Cemento</div>
+    <div class="topbar-actions">
+      <button id="btn-salva" class="btn">Salva</button>
+      <button id="btn-carica" class="btn">Carica</button>
+      <button id="btn-reset" class="btn btn-danger">Reset</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel panel-left">
+      <h2>Parametri</h2>
+      <fieldset>
+        <legend>Dimensioni principali</legend>
+        <label>Lunghezza (m)<input type="number" id="p-lunghezza" min="10" max="200" step="1" value="60" /></label>
+        <label>Larghezza (m)<input type="number" id="p-larghezza" min="10" max="80" step="1" value="30" /></label>
+        <label>Altezza pilastro (m)<input type="number" id="p-altezzaPilastro" min="4" max="12" step="0.5" value="6" /></label>
+        <label>Pendenza copertura (%)<input type="number" id="p-pendenzaCopertura" min="3" max="20" step="0.5" value="5" /></label>
+      </fieldset>
+      <fieldset>
+        <legend>Campate e pilastri</legend>
+        <label>Numero campate<input type="number" id="p-numeroCampate" min="1" max="10" step="1" value="4" /></label>
+        <label>Interasse campate (m)<input type="number" id="p-interasseCampate" min="6" max="30" step="1" value="15" /></label>
+        <label>Numero pilastri per fila<input type="number" id="p-numeroPilastriPerFila" min="2" max="20" step="1" value="5" /></label>
+      </fieldset>
+      <fieldset>
+        <legend>Elementi</legend>
+        <label>Sezione pilastro (cm)
+          <select id="p-sezionePilastro">
+            <option value="30x30">30 × 30</option><option value="40x40" selected>40 × 40</option>
+            <option value="50x50">50 × 50</option><option value="60x60">60 × 60</option>
+          </select>
+        </label>
+        <label>Tipo trave
+          <select id="p-tipoTrave">
+            <option value="aT">Trave a T</option><option value="aI">Trave a I</option><option value="rettangolare">Rettangolare</option>
+          </select>
+        </label>
+        <label>Spessore pannello tamponamento (cm)<input type="number" id="p-spessorePannello" min="10" max="40" step="1" value="20" /></label>
+      </fieldset>
+    </aside>
+
+    <section class="viewport">
+      <nav class="tabs">
+        <button class="tab active" data-view="3d">3D</button>
+        <button class="tab" data-view="pianta">Pianta</button>
+        <button class="tab" data-view="prospetto">Prospetto</button>
+        <button class="tab" data-view="sezione">Sezione</button>
+        <button class="tab" data-view="distinta">Distinta</button>
+      </nav>
+      <div class="view-container">
+        <div id="view-3d" class="view active"></div>
+        <div id="view-pianta" class="view"><canvas id="canvas-pianta"></canvas></div>
+        <div id="view-prospetto" class="view"><canvas id="canvas-prospetto"></canvas></div>
+        <div id="view-sezione" class="view"><canvas id="canvas-sezione"></canvas></div>
+        <div id="view-distinta" class="view">
+          <table id="tabella-distinta"><thead><tr><th>Elemento</th><th>Quantità</th><th>Dimensioni</th><th>Volume (m³)</th><th>Peso (t)</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel panel-right">
+      <h2>Risultati</h2>
+      <div class="stat"><span class="stat-label">Superficie coperta</span><span class="stat-value" id="r-superficie">0 m²</span></div>
+      <div class="stat"><span class="stat-label">Volume calcestruzzo</span><span class="stat-value" id="r-volume">0 m³</span></div>
+      <div class="stat"><span class="stat-label">Peso totale</span><span class="stat-value" id="r-peso">0 t</span></div>
+      <div class="stat"><span class="stat-label">Numero pilastri</span><span class="stat-value" id="r-pilastri">0</span></div>
+      <h2>Avvisi</h2><ul id="lista-avvisi" class="avvisi"></ul>
+    </aside>
+  </main>
+
+  <footer class="footer"><span>CACEM · v0.1 · Modello approssimativo</span><span id="status">Pronto</span></footer>
+
+  <script type="importmap">
+  {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
