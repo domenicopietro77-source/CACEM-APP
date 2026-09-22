@@ -1,10 +1,12 @@
-import { trovaTrave, trovaTegolo, getCatalogo } from "./catalogo.js";
+// modello.js — Stato del capannone, calcoli derivati, persistenza
 
-export const CHIAVE = "cacem-stato-v3";
+import { trovaPilastro, trovaTrave, trovaTegolo, trovaFondazione } from './catalogo.js';
 
-const DEFAULT_PILASTRO_BASE = 40;
-const DEFAULT_PILASTRO_ALTEZZA_SEZIONE = 60;
+const CHIAVE = 'cacem-stato-v4';
 
+/**
+ * Stato di default del capannone.
+ */
 export function statoDefault() {
   return {
     generale: {
@@ -23,335 +25,204 @@ export function statoDefault() {
       { id: 4, interasse: 15 }
     ],
     pilastri: {
-      base: DEFAULT_PILASTRO_BASE,
-      altezzaSezione: DEFAULT_PILASTRO_ALTEZZA_SEZIONE,
-      fondazione: "bicchiere"
+      base: 40,
+      altezzaSezione: 40,
+      pluviale: true,
+      pluvialeDiametro: 100,
+      fondazione: 'bicchiere_pluviale'
     },
     travi: {
-      tipoId: "TL"
+      tipoBanchina: 'TL',
+      tipoTrasversale: 'TD'
     },
     copertura: {
-      tegoloId: "AL"
+      tegoloId: 'AL',
+      coppellaId: 'CC332'
+    },
+    solai: {
+      tipoId: 'TT80'
     },
     pannelli: {
-      tipo: "V",
+      tipo: 'V',
       spessore: 20,
-      finitura: "FV",
-      colori: {
-        A: "#d8d8d8",
-        B: "#b0b0b0"
+      finitura: 'FV',
+      coloriGraniglia: ['#d9d2c5', '#b8b0a0'],
+      percentualiGraniglia: [70, 30],
+      lati: {
+        sud:  { attivo: true, apertura: [] },
+        est:  { attivo: true, apertura: [] },
+        nord: { attivo: true, apertura: [] },
+        ovest:{ attivo: true, apertura: [] }
       }
-    }
-  };
-}
-
-function migraTipoPilastro(tipoId) {
-  if (typeof tipoId !== "string") {
-    return null;
-  }
-
-  const match = tipoId.match(/^(\d+)x(\d+)$/);
-
-  if (!match) {
-    return null;
-  }
-
-  return {
-    base: Number(match[1]),
-    altezzaSezione: Number(match[2])
-  };
-}
-
-function normalizzaStato(s) {
-  const defaults = statoDefault();
-
-  s.generale = {
-    ...defaults.generale,
-    ...(s.generale || {})
-  };
-
-  s.campate = Array.isArray(s.campate) && s.campate.length
-    ? s.campate
-    : defaults.campate;
-
-  const legacy = migraTipoPilastro(s.pilastri?.tipoId);
-
-  s.pilastri = {
-    ...defaults.pilastri,
-    ...(s.pilastri || {}),
-    ...(legacy || {})
-  };
-
-  delete s.pilastri.tipoId;
-
-  s.travi = {
-    ...defaults.travi,
-    ...(s.travi || {})
-  };
-
-  s.copertura = {
-    ...defaults.copertura,
-    ...(s.copertura || {})
-  };
-
-  s.pannelli = {
-    ...defaults.pannelli,
-    ...(s.pannelli || {}),
-    colori: {
-      ...defaults.pannelli.colori,
-      ...(s.pannelli?.colori || {})
-    }
-  };
-
-  return s;
-}
-
-export function calcolaDerivati(s) {
-  const g = s.generale;
-
-  const L = s.campate.reduce(
-    (sum, campata) => sum + Number(campata.interasse || 0),
-    0
-  );
-  const W = Number(g.luce || 0);
-  const numCampate = s.campate.length;
-  const numPilastri = (numCampate + 1) * 2;
-
-  const basePilastro = Number(
-    s.pilastri.base || DEFAULT_PILASTRO_BASE
-  );
-  const altezzaSezionePilastro = Number(
-    s.pilastri.altezzaSezione || DEFAULT_PILASTRO_ALTEZZA_SEZIONE
-  );
-
-  const t = trovaTrave(s.travi.tipoId) || trovaTrave("TL");
-  const k = trovaTegolo(s.copertura.tegoloId) || trovaTegolo("AL");
-
-  const altezzaPilastro = Number(g.altezzaPilastro || 0);
-  const pendenza = Number(g.pendenzaCopertura || 0);
-
-  const areaSezionePilastro =
-    (basePilastro / 100) *
-    (altezzaSezionePilastro / 100);
-
-  const volumePilastri =
-    areaSezionePilastro *
-    altezzaPilastro *
-    numPilastri;
-
-  const volumeTraviBanchina =
-    L *
-    (t.base / 100) *
-    (t.altezza / 100) *
-    2;
-
-  const volumeTraviTrasversali =
-    numCampate *
-    W *
-    (t.base / 100) *
-    (t.altezza / 100);
-
-  const lunghezzaFalda =
-    Math.sqrt(
-      (W / 2) ** 2 +
-      (W * pendenza / 200) ** 2
-    );
-
-  const numTegoli =
-    Math.max(
-      1,
-      Math.ceil(L / (k.larghezza || 2.5))
-    ) * 2;
-
-  const areaTegolo =
-    (k.larghezza || 2.5) *
-    (k.altezza || 0.12);
-
-  const volumeTegoli =
-    areaTegolo *
-    lunghezzaFalda *
-    numTegoli;
-
-  const spessorePannello =
-    Number(s.pannelli.spessore || 0) / 100;
-
-  const perimetro = 2 * (L + W);
-
-  const volumePannelli =
-    perimetro *
-    altezzaPilastro *
-    spessorePannello;
-
-  const volumeInterpiano =
-    g.interpiano
-      ? L * W * 0.25
-      : 0;
-
-  const volumeFondazioni =
-    numPilastri *
-    0.9 *
-    0.9 *
-    0.8;
-
-  const volumeStrutturale =
-    volumePilastri +
-    volumeTraviBanchina +
-    volumeTraviTrasversali +
-    volumeTegoli +
-    volumePannelli;
-
-  const total =
-    volumeStrutturale +
-    volumeFondazioni +
-    volumeInterpiano;
-
-  const tipoPilastro =
-    String(basePilastro) +
-    "x" +
-    String(altezzaSezionePilastro);
-
-  const d = [
-    [
-      "Fondazioni",
-      "Fondazione",
-      s.pilastri.fondazione,
-      numPilastri,
-      "0.90×0.90×0.80",
-      volumeFondazioni
-    ],
-    [
-      "Pilastri",
-      "Pilastri",
-      tipoPilastro,
-      numPilastri,
-      (basePilastro / 100).toFixed(2) +
-        "×" +
-        (altezzaSezionePilastro / 100).toFixed(2) +
-        "×" +
-        altezzaPilastro.toFixed(2),
-      volumePilastri
-    ],
-    [
-      "Travi",
-      "Banchina",
-      s.travi.tipoId,
-      2,
-      L.toFixed(2) +
-        "×" +
-        (t.base / 100).toFixed(2) +
-        "×" +
-        (t.altezza / 100).toFixed(2),
-      volumeTraviBanchina
-    ],
-    [
-      "Travi",
-      "Trasversali",
-      s.travi.tipoId,
-      numCampate,
-      W.toFixed(2) +
-        "×" +
-        (t.base / 100).toFixed(2) +
-        "×" +
-        (t.altezza / 100).toFixed(2),
-      volumeTraviTrasversali
-    ],
-    [
-      "Copertura",
-      "Tegoli",
-      s.copertura.tegoloId,
-      numTegoli,
-      (k.larghezza || 2.5).toFixed(2) +
-        "×" +
-        lunghezzaFalda.toFixed(2),
-      volumeTegoli
-    ],
-    [
-      "Pannelli",
-      "Tamponamento",
-      s.pannelli.tipo,
-      1,
-      perimetro.toFixed(2) +
-        "×" +
-        altezzaPilastro.toFixed(2) +
-        "×" +
-        spessorePannello.toFixed(2),
-      volumePannelli
-    ]
-  ];
-
-  if (g.interpiano) {
-    d.push([
-      "Solai",
-      "Interpiano",
-      "TT",
-      1,
-      L.toFixed(2) +
-        "×" +
-        W.toFixed(2),
-      volumeInterpiano
-    ]);
-  }
-
-  function prezzoUnitario(famiglia) {
-    const euroM3 = getCatalogo("listino")?.euro_m3 || {};
-    const chiavi = {
-      Fondazioni: "calcestruzzo_fondazioni",
-      Pilastri: "calcestruzzo_pilastri",
-      Travi: "calcestruzzo_travi",
-      Copertura: "calcestruzzo_tegoli",
-      Pannelli: "calcestruzzo_pannelli",
-      Solai: "calcestruzzo_solaio"
-    };
-    return Number(euroM3[chiavi[famiglia]] || 0);
-  }
-
-  const distinta = d.map(row => [...row, prezzoUnitario(row[0])]);
-  const prezzoTotale = distinta.reduce((sum, row) => sum + row[5] * row[6], 0);
-
-  return {
-    lunghezza: L,
-    superficie: L * W,
-    volumi: {
-      pilastri: volumePilastri,
-      traviBanchina: volumeTraviBanchina,
-      traviTrasversali: volumeTraviTrasversali,
-      tegoli: volumeTegoli,
-      pannelli: volumePannelli,
-      interpiano: volumeInterpiano,
-      fondazioni: volumeFondazioni,
-      totale: total
     },
-    peso: total * 2.5,
-    distinta,
-    prezzoTotale,
-    quotaColmo:
-      altezzaPilastro +
-      W * pendenza / 200
+    meta: {
+      versione: '4.0',
+      timestamp: null
+    }
   };
 }
-export function salvaStato(s) {
-  localStorage.setItem(
-    CHIAVE,
-    JSON.stringify(s)
-  );
+
+/**
+ * Clona stato in modo profondo.
+ */
+export function clonaStato(s) {
+  return JSON.parse(JSON.stringify(s));
 }
 
-export function caricaStato() {
-  try {
-    const raw = localStorage.getItem(CHIAVE);
+/**
+ * Lunghezza totale del capannone (somma interassi).
+ */
+export function lunghezzaTotale(stato) {
+  return stato.campate.reduce((a, c) => a + Number(c.interasse || 0), 0);
+}
 
-    if (!raw) {
-      return null;
+/**
+ * Calcolo derivati: geometria, volumi, pesi, distinta.
+ * Retrocompatibile con la struttura precedente.
+ */
+export function calcolaDerivati(stato) {
+  const g = stato.generale;
+  const L = lunghezzaTotale(stato);
+  const W = g.luce;
+  const H = g.altezzaPilastro;
+  const salita = (W / 2) * (g.pendenzaCopertura / 100);
+  const Hcolmo = H + salita;
+
+  // --- Pilastri ---
+  const numPerFila = stato.campate.length + 1;
+  const numPilastri = numPerFila * 2;
+  const baseP = (stato.pilastri.base || 40) / 100;
+  const altP = (stato.pilastri.altezzaSezione || 40) / 100;
+  const volPilSingolo = baseP * altP * H;
+  const volPilastri = volPilSingolo * numPilastri;
+
+  // --- Travi di banchina (2, una per lato) ---
+  const tra = trovaTrave(stato.travi.tipoBanchina) || trovaTrave('TL');
+  const altTraveM = (tra ? tra.altezza : 60) / 100;
+  const baseTraveM = (tra ? tra.base : 40) / 100;
+  const volTraveBanchina = L * baseTraveM * altTraveM * 2;
+
+  // --- Travi trasversali (per campata, due falde) ---
+  const numTraviTrasv = stato.campate.length * 2;
+  const lungTraveTrasv = Math.sqrt((W / 2) ** 2 + salita ** 2);
+  const volTraveTrasvSingola = lungTraveTrasv * baseTraveM * altTraveM;
+  const volTraviTrasv = volTraveTrasvSingola * numTraviTrasv;
+
+  // --- Tegoli copertura ---
+  const teg = trovaTegolo(stato.copertura.tegoloId) || trovaTegolo('AL');
+  const numTegoliPerFalda = Math.ceil(L / ((teg ? teg.larghezza : 250) / 100));
+  const numTegoli = numTegoliPerFalda * 2;
+  const lungFalda = Math.sqrt((W / 2) ** 2 + salita ** 2);
+  const volTegoloSingolo = ((teg ? teg.larghezza : 250) / 100) * 
+                           ((teg ? teg.altezza : 12) / 100) * lungFalda;
+  const volTegoli = volTegoloSingolo * numTegoli;
+
+  // --- Pannelli tamponamento (4 lati) ---
+  const spPannM = stato.pannelli.spessore / 100;
+  const perimetro = 2 * (L + W);
+  const volPannelli = perimetro * H * spPannM;
+
+  // --- Interpiano (se attivo) ---
+  let volInterpiano = 0;
+  if (g.interpiano) {
+    const spSolaio = 0.25;
+    volInterpiano = L * W * spSolaio;
+  }
+
+  // --- Fondazioni (stima) ---
+  const largFond = Math.max(baseP * 1.8, 0.8);
+  const altFond = 0.8;
+  const volFondSingolo = largFond * largFond * altFond;
+  const volFondazioni = volFondSingolo * numPilastri;
+
+  // --- Volume totale ---
+  const volTotale = volPilastri + volTraveBanchina + volTraviTrasv + 
+                    volTegoli + volPannelli + volInterpiano + volFondazioni;
+  const densita = 2.5;
+  const pesoStimato = volTotale * densita;
+
+  return {
+    L, W, H, Hcolmo, salita,
+    numPilastri,
+    numPerFila,
+    numTegoli,
+    lungFalda,
+    superficieCoperta: L * W,
+    volumeTotale: volTotale,
+    pesoStimato,
+    volumi: {
+      pilastri: volPilastri,
+      traveBanchina: volTraveBanchina,
+      traviTrasversali: volTraviTrasv,
+      tegoli: volTegoli,
+      pannelli: volPannelli,
+      interpiano: volInterpiano,
+      fondazioni: volFondazioni,
+      totale: volTotale
     }
+  };
+}
 
-    return normalizzaStato(JSON.parse(raw));
-  } catch {
+/**
+ * Salva lo stato in localStorage.
+ */
+export function salvaStato(s) {
+  const copia = clonaStato(s);
+  copia.meta.timestamp = new Date().toISOString();
+  localStorage.setItem(CHIAVE, JSON.stringify(copia));
+  return copia;
+}
+
+/**
+ * Carica lo stato da localStorage, con migrazione da versioni vecchie.
+ */
+export function caricaStato() {
+  const raw = localStorage.getItem(CHIAVE);
+  if (!raw) {
+    // Prova a migrare da vecchie versioni
+    const vecchio = localStorage.getItem('cacem-stato-v3');
+    if (vecchio) {
+      try {
+        const v3 = JSON.parse(vecchio);
+        return migraV3aV4(v3);
+      } catch { return null; }
+    }
     return null;
   }
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed.generale || !parsed.campate) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+/**
+ * Migrazione da versione 3 a versione 4.
+ */
+function migraV3aV4(v3) {
+  const nuovo = statoDefault();
+  if (v3.generale) {
+    Object.assign(nuovo.generale, v3.generale);
+  }
+  if (v3.campate && Array.isArray(v3.campate)) {
+    nuovo.campate = v3.campate;
+  }
+  if (v3.pilastri) {
+    if (v3.pilastri.base) nuovo.pilastri.base = v3.pilastri.base;
+    if (v3.pilastri.altezzaSezione) nuovo.pilastri.altezzaSezione = v3.pilastri.altezzaSezione;
+  }
+  if (v3.travi && v3.travi.tipoId) {
+    nuovo.travi.tipoBanchina = v3.travi.tipoId;
+  }
+  if (v3.copertura && v3.copertura.tegoloId) {
+    nuovo.copertura.tegoloId = v3.copertura.tegoloId;
+  }
+  return nuovo;
 }
 
 export function cancellaStato() {
   localStorage.removeItem(CHIAVE);
+  localStorage.removeItem('cacem-stato-v3');
 }
 
 export function esportaJSON(s) {
