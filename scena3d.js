@@ -117,8 +117,8 @@ function creaFalda(
 
   mesh.rotation.x =
     lato === "sud"
-      ? angle
-      : -angle;
+      ? -angle
+      : angle;
 
   return mesh;
 }
