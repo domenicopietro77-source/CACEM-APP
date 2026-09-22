@@ -1,590 +1,371 @@
-// trigger redeploy
-import * as THREE from "three";
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+// scena3d.js — Scena 3D con Three.js, materiali PBR, illuminazione realistica
 
-let scene;
-let camera;
-let renderer;
-let controls;
-let group;
-let wire = false;
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { lunghezzaTotale } from './modello.js';
 
+let scene, camera, renderer, controls;
+let gruppoCapannone;
+let griglia, assi;
+let inizializzato = false;
+let wireframeAttivo = false;
+
+const COLORI = {
+  pilastri:        0xbcb8b0,
+  traveBanchina:   0xc8c4bc,
+  traviTrasv:      0xd0ccc4,
+  tegoli:          0xbfb8a8,
+  coppelle:        0xa8a29a,
+  pannelliFV:      0xd0cbc0,
+  pannelliGR:      0xc8c0b0,
+  fondazione:      0x6a6a6a,
+  solaio:          0xb8b4a8,
+  carroponte:      0x4a5a7a,
+  terreno:         0x4a5058,
+  sfondo:          0x2a2f3a,
+  griglia:         0x4a5560,
+  selezione:       0x4a9eff
+};
+
+/**
+ * Inizializza la scena 3D.
+ */
 export function inizializzaScena3D() {
-  const container = document.getElementById("threeView");
+  if (inizializzato) return;
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xe8eaed);
-  scene.fog = null;
+  const container = document.getElementById('threeView');
+  if (!container) {
+    console.warn('Container threeView non trovato');
+    return;
+  }
 
-  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-
+  // --- Renderer ---
   renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(2, devicePixelRatio));
-  renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.0;
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+  renderer.setSize(container.clientWidth || 800, container.clientHeight || 500);
+  renderer.setClearColor(COLORI.sfondo, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
   container.appendChild(renderer.domElement);
 
+  // --- Scena ---
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(COLORI.sfondo);
+  scene.fog = new THREE.Fog(COLORI.sfondo, 150, 400);
+
+  // --- Camera ---
+  camera = new THREE.PerspectiveCamera(
+    45,
+    (container.clientWidth || 800) / (container.clientHeight || 500),
+    0.1,
+    2000
+  );
+  camera.position.set(60, 45, 60);
+
+  // --- Controls ---
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 3, 0);
+  controls.maxPolarAngle = Math.PI / 2 - 0.05;
+  controls.minDistance = 10;
+  controls.maxDistance = 500;
+  controls.update();
 
-  scene.add(new THREE.HemisphereLight(0x9fc7ff,0x6d7278,1.15));
-  scene.add(new THREE.AmbientLight(0xffffff,0.22));
-  const directional=new THREE.DirectionalLight(0xffffff,2.2);
-  directional.position.set(35,55,25); directional.castShadow=true;
-  directional.shadow.mapSize.set(2048,2048);
-  directional.shadow.camera.near=1; directional.shadow.camera.far=220;
-  directional.shadow.camera.left=-80; directional.shadow.camera.right=80;
-  directional.shadow.camera.top=80; directional.shadow.camera.bottom=-80;
-  directional.shadow.bias=-0.0005; scene.add(directional);
-  new RGBELoader().load("https://threejs.org/examples/textures/equirectangular/royal_esplanade_1k.hdr",texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;scene.environment=texture;},undefined,()=>{});
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({color:0x4a5058,roughness:0.95,metalness:0}));
-  ground.rotation.x=-Math.PI/2; ground.position.y=-0.22; ground.receiveShadow=true; scene.add(ground);
-  const grid=new THREE.GridHelper(160,80,0x8a9098,0x5d636c);
-  grid.position.y=-0.205; grid.material.transparent=true; grid.material.opacity=0.15; scene.add(grid);
+  // --- Luci ---
+  const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambient);
 
-  group = new THREE.Group();
-  scene.add(group);
+  const hemi = new THREE.HemisphereLight(0xaaccff, 0x4a5058, 0.6);
+  scene.add(hemi);
 
-  resizeScena3D();
+  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+  sun.position.set(80, 120, 60);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -120;
+  sun.shadow.camera.right = 120;
+  sun.shadow.camera.top = 120;
+  sun.shadow.camera.bottom = -120;
+  sun.shadow.camera.near = 1;
+  sun.shadow.camera.far = 400;
+  sun.shadow.bias = -0.0005;
+  scene.add(sun);
+
+  const fill = new THREE.DirectionalLight(0xaaccff, 0.3);
+  fill.position.set(-60, 40, -40);
+  scene.add(fill);
+
+  // --- Griglia terra ---
+  griglia = new THREE.GridHelper(300, 300, COLORI.griglia, COLORI.griglia);
+  griglia.position.y = 0.01;
+  griglia.material.opacity = 0.3;
+  griglia.material.transparent = true;
+  scene.add(griglia);
+
+  // --- Assi ---
+  assi = new THREE.AxesHelper(10);
+  assi.position.set(-1, 0.02, -1);
+  scene.add(assi);
+
+  // --- Gruppo capannone ---
+  gruppoCapannone = new THREE.Group();
+  scene.add(gruppoCapannone);
+
+  window.addEventListener('resize', resizeScena3D);
+  inizializzato = true;
   animate();
 }
 
 function animate() {
   requestAnimationFrame(animate);
-  controls?.update();
+  if (controls) controls.update();
+  if (renderer && scene && camera) renderer.render(scene, camera);
+}
 
-  if (renderer) {
-    renderer.render(scene, camera);
+export function resizeScena3D() {
+  const container = document.getElementById('threeView');
+  if (!container || !renderer || !camera) return;
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (w === 0 || h === 0) return;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+
+function svuotaGruppo() {
+  while (gruppoCapannone.children.length > 0) {
+    const obj = gruppoCapannone.children.pop();
+    obj.traverse(child => {
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+        else child.material.dispose();
+      }
+    });
   }
 }
 
-function creaMateriale(colore, roughness=0.9, metalness=0.0) {
+function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({
-    color: colore,
-    roughness,
-    metalness,
-    wireframe: wire
+    color,
+    roughness: opts.roughness !== undefined ? opts.roughness : 0.85,
+    metalness: opts.metalness !== undefined ? opts.metalness : 0.05,
+    ...opts
   });
 }
 
-/*
- * Sistema di coordinate:
- * X = lunghezza del capannone
- * Y = altezza verticale
- * Z = luce trasversale
- */
-
-function creaBox(
-  sizeX,
-  sizeY,
-  sizeZ,
-  x,
-  y,
-  z,
-  colore = 0xc8c4bc
-) {
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(sizeX, sizeY, sizeZ),
-    creaMateriale(colore)
-  );
-  mesh.castShadow=true;
-  mesh.receiveShadow=true;
-
+function addBox(w, h, d, x, y, z, material) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mesh = new THREE.Mesh(geo, material);
   mesh.position.set(x, y, z);
-  group.add(mesh);
-
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  gruppoCapannone.add(mesh);
   return mesh;
 }
 
-function creaFalda(
-  L,
-  W,
-  H,
-  pendenza,
-  lato
-) {
-  const rise = W * pendenza / 200;
-  const halfW = W / 2;
-  const lunghezzaFalda = Math.sqrt(
-    halfW ** 2 +
-    rise ** 2
-  );
+/**
+ * Aggiorna la scena 3D dallo stato.
+ */
+export function aggiornaScena3D(stato) {
+  if (!inizializzato) inizializzaScena3D();
+  if (!gruppoCapannone || !stato) return;
 
-  const mesh = creaBox(
-    L,
-    0.20,
-    lunghezzaFalda,
-    L / 2,
-    H + rise / 2,
-    lato === "sud"
-      ? halfW / 2
-      : halfW + halfW / 2,
-    0xbfb8a8
-  );
+  svuotaGruppo();
 
-  /*
-   * BoxGeometry local Z follows the sloped falda.
-   * Rotation around X changes local Z direction in the Y/Z plane.
-   */
-  const angle =
-    Math.atan2(rise, halfW);
+  const g = stato.generale;
+  const L = lunghezzaTotale(stato);
+  const W = g.luce;
+  const H = g.altezzaPilastro;
+  const pendenza = g.pendenzaCopertura / 100;
+  const salita = (W / 2) * pendenza;
+  const Hcolmo = H + salita;
 
-  mesh.rotation.x =
-    lato === "sud"
-      ? -angle
-      : angle;
+  const baseP = (stato.pilastri.base || 40) / 100;
+  const altP = (stato.pilastri.altezzaSezione || 40) / 100;
+  const spPann = stato.pannelli.spessore / 100;
 
-  return mesh;
-}
+  // Origine al centro della pianta
+  const x0 = -L / 2;
+  const z0 = -W / 2;
 
-function creaParete(
-  sizeX,
-  sizeY,
-  sizeZ,
-  x,
-  y,
-  z
-) {
-  return creaBox(
-    sizeX,
-    sizeY,
-    sizeZ,
-    x,
-    y,
-    z,
-    0x8a8a8a
-  );
-}
+  // --- FONDAZIONI ---
+  const largFond = Math.max(baseP * 1.8, 0.8);
+  const altFond = 0.8;
+  const matFond = mat(COLORI.fondazione, { roughness: 0.95 });
+  const numPerFila = stato.campate.length + 1;
+  const passoX = L / (numPerFila - 1);
 
-export function aggiornaScena3D(s) {
-  if (!group) return;
-
-  while (group.children.length) {
-    group.remove(group.children[0]);
+  for (let i = 0; i < numPerFila; i++) {
+    const x = x0 + i * passoX;
+    for (const z of [z0, z0 + W]) {
+      addBox(largFond, altFond, largFond, x, -altFond / 2, z, matFond);
+    }
   }
 
-  const L = s.campate.reduce(
-    (sum, campata) =>
-      sum + Number(campata.interasse || 0),
-    0
-  );
-
-  const W = Number(s.generale.luce || 0);
-  const H = Number(s.generale.altezzaPilastro || 0);
-  const pendenza = Number(
-    s.generale.pendenzaCopertura || 0
-  );
-
-  const basePilastro =
-    Number(s.pilastri.base || 40) / 100;
-
-  const altezzaSezionePilastro =
-    Number(s.pilastri.altezzaSezione || 60) / 100;
-
-  const rise = W * pendenza / 200;
-  const halfW = W / 2;
-  const Hcolmo = H + rise;
-
-  const xs = [0];
-  let x = 0;
-
-  s.campate.forEach(campata => {
-    x += Number(campata.interasse || 0);
-    xs.push(x);
-  });
-
-  /*
-   * PILASTRI
-   * Entrambe le file hanno esattamente la stessa altezza H.
-   */
-  xs.forEach(px => {
-    creaBox(0.9,0.8,0.9,px,-0.62,0,0x6a6a6a);
-    creaBox(0.9,0.8,0.9,px,-0.62,W,0x6a6a6a);
-    creaBox(
-      basePilastro,
-      H,
-      altezzaSezionePilastro,
-      px,
-      H / 2,
-      0
-    );
-
-    creaBox(
-      basePilastro,
-      H,
-      altezzaSezionePilastro,
-      px,
-      H / 2,
-      W
-    );
-  });
-
-  /*
-   * TRAVI DI BANCHINA
-   * Due travi continue, parallele all'asse X, appoggiate a Y=H.
-   */
-  const traveBase =
-    Number(trovaDimensioneTrave(s, "base", 30)) / 100;
-
-  const traveAltezza =
-    Number(trovaDimensioneTrave(s, "altezza", 60)) / 100;
-
-  creaBox(
-    L,
-    traveAltezza,
-    traveBase,
-    L / 2,
-    H - traveAltezza / 2,
-    0
-  );
-
-  creaBox(
-    L,
-    traveAltezza,
-    traveBase,
-    L / 2,
-    H - traveAltezza / 2,
-    W
-  );
-
-  /*
-   * TRAVI TRASVERSALI
-   * Una coppia per ogni campata, inclinata nel piano Y/Z.
-   */
-  xs.forEach((px, index) => {
-    if (index >= s.campate.length) return;
-
-    const span = Number(
-      s.campate[index].interasse || 0
-    );
-
-    const midX = px + span / 2;
-
-    creaTraveTrasversale(
-      midX,
-      W,
-      H,
-      rise,
-      s
-    );
-  });
-
-  /*
-   * COPERTURA
-   * Esattamente due falde continue, senza strisce per campata.
-   */
-  creaFalda(
-    L,
-    W,
-    H,
-    pendenza,
-    "sud"
-  );
-
-  creaFalda(
-    L,
-    W,
-    H,
-    pendenza,
-    "nord"
-  );
-
-  /*
-   * PARETI CONTINUE PERIMETRALI.
-   */
-  const spessorePannello=Number(s.pannelli.spessore||0)/100;
-  const colorePannelloA=Number.parseInt(String(s.pannelli.colori?.A||"#d0cbc0").replace("#",""),16);
-  const colorePannelloB=Number.parseInt(String(s.pannelli.colori?.B||"#b0b0b0").replace("#",""),16);
-  const pannelloA=s.pannelli.finitura==="GR"?colorePannelloA:0xd0cbc0;
-  const pannelloB=s.pannelli.finitura==="GR"?colorePannelloB:0xd0cbc0;
-
-  creaParete(
-    L,
-    H,
-    spessorePannello,
-    L / 2,
-    H / 2,
-    0,
-    pannelloA
-  );
-
-  creaParete(
-    L,
-    H,
-    spessorePannello,
-    L / 2,
-    H / 2,
-    W,
-    pannelloB
-  );
-
-  creaParete(
-    spessorePannello,
-    H,
-    W,
-    0,
-    H / 2,
-    W / 2,
-    pannelloA
-  );
-
-  creaParete(
-    spessorePannello,
-    H,
-    W,
-    L,
-    H / 2,
-    W / 2,
-    pannelloB
-  );
-
-  /*
-   * PAVIMENTO: piano X/Z con quota superiore Y=0.
-   */
-  creaBox(
-    L,
-    0.20,
-    W,
-    L / 2,
-    -0.10,
-    W / 2,
-    0x607080
-  );
-
-  if (s.generale.interpiano) {
-    const hInterpiano = Number(s.generale.altezzaInterpiano || H / 2);
-    creaBox(
-      L,
-      0.25,
-      W,
-      L / 2,
-      hInterpiano - 0.125,
-      W / 2,
-      0xb0b8be
-    );
+  // --- PILASTRI ---
+  const matPilastro = mat(COLORI.pilastri, { roughness: 0.9 });
+  for (let i = 0; i < numPerFila; i++) {
+    const x = x0 + i * passoX;
+    for (const z of [z0, z0 + W]) {
+      addBox(baseP, H, altP, x, H / 2, z, matPilastro);
+    }
   }
 
-  if (s.generale.carroponte) {
-    const quotaCarroponte = Math.max(0.25, Hcolmo - 1.0);
-    const baseCarroponte = Math.max(traveBase * 0.8, 0.20);
-    const altezzaCarroponte = Math.max(traveAltezza * 0.55, 0.25);
-    creaBox(L, altezzaCarroponte, baseCarroponte, L / 2, quotaCarroponte, W / 2, 0x35658a);
+  // --- TRAVI DI BANCHINA (parallele a X, sopra i pilastri) ---
+  const tra = stato.travi.tipoBanchina;
+  const baseTrave = 0.40;
+  const altTrave = 0.60;
+  const matTrave = mat(COLORI.traveBanchina, { roughness: 0.85 });
+
+  for (const z of [z0, z0 + W]) {
+    addBox(L, altTrave, baseTrave, 0, H + altTrave / 2, z, matTrave);
   }
-  fit(s);
-}
 
-function trovaDimensioneTrave(s, campo, fallbackCm) {
-  const catalogo = window.CACEM_CATALOGO;
+  // --- TRAVI TRASVERSALI (inclinate, una per campata, per falda) ---
+  const lungFalda = Math.sqrt((W / 2) ** 2 + salita ** 2);
+  const angoloFalda = Math.atan2(salita, W / 2);
+  const matTraveTrasv = mat(COLORI.traviTrasv, { roughness: 0.85 });
 
-  const trave =
-    catalogo?.travi?.find(
-      item => item.id === s.travi.tipoId
-    );
+  for (let i = 0; i < stato.campate.length; i++) {
+    const x = x0 + (i + 0.5) * passoX * (stato.campate[i].interasse / 15);
+    const xPos = x0 + i * (L / stato.campate.length) + stato.campate[i].interasse / 2;
 
-  return Number(
-    trave?.[campo] ??
-    fallbackCm
-  );
-}
+    for (const segno of [-1, 1]) {
+      const zInizio = segno * W / 2;
+      const zMedio = zInizio / 2;
+      const yMedio = H + altTrave + salita / 2;
 
-function creaMaterialeFerro(colore=0x6b7280){return new THREE.MeshStandardMaterial({color:colore,roughness:0.4,metalness:0.8,wireframe:wire});}
+      const geo = new THREE.BoxGeometry(baseTrave, altTrave, lungFalda);
+      const mesh = new THREE.Mesh(geo, matTraveTrasv);
+      mesh.position.set(xPos, yMedio, zMedio);
+      mesh.rotation.x = segno === -1 ? angoloFalda : -angoloFalda;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      gruppoCapannone.add(mesh);
+    }
+  }
 
-function creaTraveTrasversale(
-  x,
-  W,
-  H,
-  rise,
-  s
-) {
-  const catalogo = window.CACEM_CATALOGO;
+  // --- COPERTURA (due falde continue) ---
+  const matTegolo = mat(COLORI.tegoli, { roughness: 0.9 });
+  const spTegolo = 0.15;
 
-  const trave =
-    catalogo?.travi?.find(
-      item => item.id === s.travi.tipoId
-    );
+  for (const segno of [-1, 1]) {
+    const zInizio = segno * W / 2;
+    const zMedio = zInizio / 2;
+    const yMedio = H + altTrave + salita / 2 + altTrave / 2 + spTegolo / 2;
 
-  const base =
-    Number(trave?.base ?? 30) / 100;
+    const geo = new THREE.BoxGeometry(L, spTegolo, lungFalda);
+    const mesh = new THREE.Mesh(geo, matTegolo);
+    mesh.position.set(0, yMedio, zMedio);
+    mesh.rotation.x = segno === -1 ? angoloFalda : -angoloFalda;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    gruppoCapannone.add(mesh);
+  }
 
-  const altezza =
-    Number(trave?.altezza ?? 60) / 100;
-
-  const halfW = W / 2;
-
-  const length =
-    Math.sqrt(
-      halfW ** 2 +
-      rise ** 2
-    );
-
-  const angle =
-    Math.atan2(rise, halfW);
-
-  const makeHalf = (
-    zCenter,
-    rotation
-  ) => {
-    const mesh = creaBox(
-      base,
-      altezza,
-      length,
-      x,
-      H + rise / 2,
-      zCenter,
-      0xd4d0c8
-    );
-
-    mesh.rotation.x = rotation;
-  };
-
-  makeHalf(
-    halfW / 2,
-    angle
+  // --- PANNELLI TAMPONAMENTO (4 pareti continue) ---
+  const matPannello = mat(
+    stato.pannelli.finitura === 'GR' ? COLORI.pannelliGR : COLORI.pannelliFV,
+    { roughness: 0.95 }
   );
 
-  makeHalf(
-    halfW + halfW / 2,
-    -angle
-  );
+  const perimetroPareti = [
+    { w: L, d: spPann, x: 0, z: z0 + spPann / 2 },
+    { w: L, d: spPann, x: 0, z: z0 + W - spPann / 2 },
+    { w: spPann, d: W - spPann * 2, x: x0 + spPann / 2, z: 0 },
+    { w: spPann, d: W - spPann * 2, x: x0 + L - spPann / 2, z: 0 }
+  ];
+
+  perimetroPareti.forEach(p => {
+    addBox(p.w, H, p.d, p.x, H / 2, p.z, matPannello);
+  });
+
+  // --- INTERPIANO (se attivo) ---
+  if (g.interpiano) {
+    const matSolaio = mat(COLORI.solaio, { roughness: 0.9 });
+    addBox(L - spPann * 2, 0.25, W - spPann * 2, 0, g.altezzaInterpiano + 0.125, 0, matSolaio);
+  }
+
+  // --- CARROPONTE (se attivo) ---
+  if (g.carroponte) {
+    const matCarroponte = mat(COLORI.carroponte, { roughness: 0.5, metalness: 0.6 });
+    const yCarroponte = H - 1.5;
+    addBox(L - 2, 0.4, 0.3, 0, yCarroponte, 0, matCarroponte);
+    addBox(0.3, 0.4, W - 2, 0, yCarroponte, 0, matCarroponte);
+  }
+
+  // --- PAVIMENTO ---
+  const matPavimento = new THREE.MeshStandardMaterial({
+    color: COLORI.terreno,
+    roughness: 1,
+    metalness: 0
+  });
+  const pav = new THREE.Mesh(new THREE.PlaneGeometry(L + 4, W + 4), matPavimento);
+  pav.rotation.x = -Math.PI / 2;
+  pav.position.y = 0;
+  pav.receiveShadow = true;
+  gruppoCapannone.add(pav);
+
+  // --- CAMERA AUTO-FIT ---
+  fitCamera(L, W, Hcolmo);
 }
 
-function fit(s) {
-  const L=s.campate.reduce((sum,c)=>sum+Number(c.interasse||0),0);
-  const W=Number(s.generale.luce||0);
-  const H=Number(s.generale.altezzaPilastro||0);
-  const rise=W*Number(s.generale.pendenzaCopertura||0)/200;
-  const distance=Math.max(L,W,H+rise,1)*1.8;
-  const target=new THREE.Vector3(L/2,(H+rise)/2,W/2);
-  const direction=new THREE.Vector3(1,0.78,-1).normalize();
-  camera.position.copy(target).addScaledVector(direction,distance);
-  controls.target.copy(target);
+function fitCamera(L, W, H) {
+  if (!camera || !controls) return;
+  const maxDim = Math.max(L, W, H * 2);
+  const distanza = maxDim * 1.6;
+
+  camera.position.set(
+    distanza * 0.7,
+    distanza * 0.55,
+    distanza * 0.7
+  );
+  controls.target.set(0, H / 2, 0);
   controls.update();
 }
 
+// --- VISTE PREDEFINITE ---
 export function vistaIsometrica() {
-  const s = window.CACEM_STATE;
-  if (!s) return;
-
-  const L = s.campate.reduce(
-    (sum, campata) =>
-      sum + Number(campata.interasse || 0),
-    0
-  );
-
-  const W = Number(s.generale.luce || 0);
-  const H = Number(s.generale.altezzaPilastro || 0);
-
-  camera.position.set(
-    L * 0.9,
-    H,
-    -W * 1.1
-  );
-
-  controls.target.set(
-    L / 2,
-    H / 2,
-    W / 2
-  );
-
+  if (!camera || !controls) return;
+  const t = controls.target;
+  const dist = 100;
+  camera.position.set(t.x + dist * 0.7, t.y + dist * 0.55, t.z + dist * 0.7);
   controls.update();
 }
 
 export function vistaTop() {
-  const s = window.CACEM_STATE;
-  if (!s) return;
-
-  const L = s.campate.reduce(
-    (sum, campata) =>
-      sum + Number(campata.interasse || 0),
-    0
-  );
-
-  const W = Number(s.generale.luce || 0);
-
-  camera.position.set(
-    L / 2,
-    Math.max(L, W) * 1.5,
-    W / 2
-  );
-
-  controls.target.set(
-    L / 2,
-    0,
-    W / 2
-  );
-
+  if (!camera || !controls) return;
+  const t = controls.target;
+  camera.position.set(t.x, 150, t.z + 0.001);
   controls.update();
 }
 
 export function vistaFront() {
-  const s = window.CACEM_STATE;
-  if (!s) return;
-
-  const L = s.campate.reduce(
-    (sum, campata) =>
-      sum + Number(campata.interasse || 0),
-    0
-  );
-
-  const H = Number(s.generale.altezzaPilastro || 0);
-
-  camera.position.set(
-    L / 2,
-    H / 2,
-    -Math.max(L, H) * 1.5
-  );
-
-  controls.target.set(
-    L / 2,
-    H / 2,
-    0
-  );
-
+  if (!camera || !controls) return;
+  const t = controls.target;
+  camera.position.set(t.x, t.y + 10, t.z + 150);
   controls.update();
 }
 
 export function vistaLato() {
-  const s = window.CACEM_STATE;
-  if (!s) return;
-
-  const W = Number(s.generale.luce || 0);
-  const H = Number(s.generale.altezzaPilastro || 0);
-
-  camera.position.set(
-    Math.max(W, H) * 1.5,
-    H / 2,
-    W / 2
-  );
-
-  controls.target.set(
-    0,
-    H / 2,
-    W / 2
-  );
-
+  if (!camera || !controls) return;
+  const t = controls.target;
+  camera.position.set(t.x + 150, t.y + 10, t.z);
   controls.update();
 }
 
 export function toggleWireframe() {
-  wire = !wire;
-  aggiornaScena3D(window.CACEM_STATE);
-}
-
-export function resizeScena3D() {
-  const container = document.getElementById("threeView");
-
-  if (!renderer) return;
-
-  const width = container.clientWidth;
-  const height = container.clientHeight;
-
-  if (!width || !height) return;
-
-  renderer.setSize(width, height);
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
+  wireframeAttivo = !wireframeAttivo;
+  gruppoCapannone.traverse(obj => {
+    if (obj.isMesh && obj.material) {
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(m => { m.wireframe = wireframeAttivo; });
+    }
+  });
+  return wireframeAttivo;
 }
