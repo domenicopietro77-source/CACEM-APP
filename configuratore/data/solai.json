@@ -1,7 +1,1 @@
-{
-  "descrizione":"Catalogo solai prefabbricati",
-  "solai":[
-    {"id":"TT","nome":"Solaio TT","larghezza":120,"altezza":25,"luceMax":12,"pesoLineare":0.30},
-    {"id":"LL","nome":"Lastra LL","larghezza":120,"altezza":20,"luceMax":8,"pesoLineare":0.24}
-  ]
-}
+{"descrizione":"Catalogo solai prefabbricati","solai":[{"id":"TT","nome":"Solaio TT","larghezza":120,"altezza":25,"luceMax":12,"pesoLineare":0.30},{"id":"LL","nome":"Lastra LL","larghezza":120,"altezza":20,"luceMax":8,"pesoLineare":0.24}]}
