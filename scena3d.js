@@ -329,6 +329,35 @@ export function aggiornaScena3D(s) {
     0x607080
   );
 
+  if (s.generale.interpiano) {
+    const hInterpiano = Number(s.generale.altezzaInterpiano || H / 2);
+    creaBox(
+      L,
+      0.25,
+      W,
+      L / 2,
+      hInterpiano - 0.125,
+      W / 2,
+      0xb0b8be
+    );
+  }
+
+  if (s.generale.carroponte) {
+    const quotaCarroponte = Math.max(0.5, H * 0.62);
+    const baseCarroponte = Math.max(traveBase * 0.8, 0.20);
+    const altezzaCarroponte = Math.max(traveAltezza * 0.55, 0.25);
+
+    creaBox(
+      L,
+      altezzaCarroponte,
+      baseCarroponte,
+      L / 2,
+      quotaCarroponte,
+      W / 2,
+      0x9ca6af
+    );
+  }
+
   fit(s);
 }
 

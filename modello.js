@@ -149,8 +149,7 @@ export function calcolaDerivati(s) {
     numCampate *
     W *
     (t.base / 100) *
-    (t.altezza / 100) *
-    2;
+    (t.altezza / 100);
 
   const lunghezzaFalda =
     Math.sqrt(
@@ -194,14 +193,17 @@ export function calcolaDerivati(s) {
     0.9 *
     0.8;
 
-  const total =
+  const volumeStrutturale =
     volumePilastri +
     volumeTraviBanchina +
     volumeTraviTrasversali +
     volumeTegoli +
-    volumePannelli +
-    volumeInterpiano +
-    volumeFondazioni;
+    volumePannelli;
+
+  const total =
+    volumeStrutturale +
+    volumeFondazioni +
+    volumeInterpiano;
 
   const tipoPilastro =
     String(basePilastro) +
@@ -214,7 +216,7 @@ export function calcolaDerivati(s) {
       "Fondazione",
       s.pilastri.fondazione,
       numPilastri,
-      "0.90Ã—0.90Ã—0.80",
+      "0.90×0.90×0.80",
       volumeFondazioni
     ],
     [
@@ -223,9 +225,9 @@ export function calcolaDerivati(s) {
       tipoPilastro,
       numPilastri,
       (basePilastro / 100).toFixed(2) +
-        "Ã—" +
+        "×" +
         (altezzaSezionePilastro / 100).toFixed(2) +
-        "Ã—" +
+        "×" +
         altezzaPilastro.toFixed(2),
       volumePilastri
     ],
@@ -235,9 +237,9 @@ export function calcolaDerivati(s) {
       s.travi.tipoId,
       2,
       L.toFixed(2) +
-        "Ã—" +
+        "×" +
         (t.base / 100).toFixed(2) +
-        "Ã—" +
+        "×" +
         (t.altezza / 100).toFixed(2),
       volumeTraviBanchina
     ],
@@ -245,11 +247,11 @@ export function calcolaDerivati(s) {
       "Travi",
       "Trasversali",
       s.travi.tipoId,
-      numCampate * 2,
+      numCampate,
       W.toFixed(2) +
-        "Ã—" +
+        "×" +
         (t.base / 100).toFixed(2) +
-        "Ã—" +
+        "×" +
         (t.altezza / 100).toFixed(2),
       volumeTraviTrasversali
     ],
@@ -259,7 +261,7 @@ export function calcolaDerivati(s) {
       s.copertura.tegoloId,
       numTegoli,
       (k.larghezza || 2.5).toFixed(2) +
-        "Ã—" +
+        "×" +
         lunghezzaFalda.toFixed(2),
       volumeTegoli
     ],
@@ -269,9 +271,9 @@ export function calcolaDerivati(s) {
       s.pannelli.tipo,
       1,
       perimetro.toFixed(2) +
-        "Ã—" +
+        "×" +
         altezzaPilastro.toFixed(2) +
-        "Ã—" +
+        "×" +
         spessorePannello.toFixed(2),
       volumePannelli
     ]
@@ -284,7 +286,7 @@ export function calcolaDerivati(s) {
       "TT",
       1,
       L.toFixed(2) +
-        "Ã—" +
+        "×" +
         W.toFixed(2),
       volumeInterpiano
     ]);

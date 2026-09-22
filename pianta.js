@@ -147,162 +147,88 @@ export function resetPianta() {
   draw(window.CACEM_STATE);
 }
 
-function disegnaPilastro(x, z, label, ox, oy, sc) {
-  ctx.fillStyle = "#6f7882";
-  ctx.fillRect(
-    ox + x * sc - 5,
-    oy + z * sc - 5,
-    10,
-    10
-  );
-
-  ctx.fillStyle = "#4a9eff";
-  ctx.font = "10px monospace";
-  ctx.fillText(
-    label,
-    ox + x * sc + 7,
-    oy + z * sc - 7
-  );
+function disegnaPilastro(x,z,label,ox,oy,sc,s){
+  const base=Number(s.pilastri?.base||40)/100;
+  const profondita=Number(s.pilastri?.altezzaSezione||60)/100;
+  const w=Math.max(3,base*sc);
+  const h=Math.max(3,profondita*sc);
+  ctx.fillStyle="#87929d";
+  ctx.strokeStyle="#ffffff";
+  ctx.lineWidth=1.5;
+  ctx.fillRect(ox+x*sc-w/2,oy+z*sc-h/2,w,h);
+  ctx.strokeRect(ox+x*sc-w/2,oy+z*sc-h/2,w,h);
+  ctx.fillStyle="#4a9eff";
+  ctx.font="10px monospace";
+  ctx.fillText(label,ox+x*sc+w/2+6,oy+z*sc-h/2-7);
 }
 
-function draw(s) {
-  if (!ctx || !s) return;
+function draw(s){
+  if(!ctx||!s)return;
+  const {width:w,height:h}=dimensioniCanvas();
+  if(!w||!h)return;
+  const dpr=window.devicePixelRatio||1;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
 
-  const { width: w, height: h } = dimensioniCanvas();
+  const L=s.campate.reduce((sum,c)=>sum+Number(c.interasse||0),0);
+  const W=Number(s.generale.luce||0);
+  if(!L||!W)return;
 
-  if (!w || !h) return;
+  const sc=scala,ox=offsetX,oy=offsetY;
+  ctx.strokeStyle="#a9b8c8";
+  ctx.lineWidth=2;
+  ctx.strokeRect(ox,oy,L*sc,W*sc);
 
-  const dpr = window.devicePixelRatio || 1;
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, w, h);
-
-  const L = s.campate.reduce(
-    (sum, campata) => sum + Number(campata.interasse || 0),
-    0
-  );
-  const W = Number(s.generale.luce || 0);
-
-  if (!L || !W) return;
-
-  /*
-   * scala, offsetX and offsetY are the complete viewport transform.
-   * The auto-fit values are used only when Reset vista is pressed
-   * or the canvas is first initialized.
-   */
-  const sc = scala;
-  const ox = offsetX;
-  const oy = offsetY;
-
-  ctx.strokeStyle = "#a9b8c8";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(
-    ox,
-    oy,
-    L * sc,
-    W * sc
-  );
-
-  // Sud: P1, P3, P5, P7, P9
-  // Nord: P2, P4, P6, P8, P10
-  let x = 0;
-
-  s.campate.forEach((campata, index) => {
-    const numeroSud = index * 2 + 1;
-    const numeroNord = index * 2 + 2;
-
-    disegnaPilastro(
-      x,
-      0,
-      "P" + numeroSud,
-      ox,
-      oy,
-      sc
-    );
-
-    disegnaPilastro(
-      x,
-      W,
-      "P" + numeroNord,
-      ox,
-      oy,
-      sc
-    );
-
-    ctx.strokeStyle = "#56687c";
+  function quota(x1,y1,x2,y2,label){
+    const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len,ny=dx/len,t=7;
+    ctx.strokeStyle="#dce5ee";ctx.lineWidth=1;
     ctx.beginPath();
-    ctx.moveTo(ox + x * sc, oy - 12);
-    ctx.lineTo(ox + x * sc, oy + W * sc + 12);
+    ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.moveTo(x1-nx*t,y1-ny*t);ctx.lineTo(x1+nx*t,y1+ny*t);
+    ctx.moveTo(x2-nx*t,y2-ny*t);ctx.lineTo(x2+nx*t,y2+ny*t);
     ctx.stroke();
+    ctx.fillStyle="#dce5ee";ctx.font="11px monospace";ctx.textAlign="center";
+    ctx.fillText(label,(x1+x2)/2+nx*12,(y1+y2)/2+ny*12);
+    ctx.textAlign="left";
+  }
+  function freccia(x,y,dx,dy){
+    const len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,px=-uy,py=ux,n=9;
+    ctx.beginPath();
+    ctx.moveTo(x,y);ctx.lineTo(x-ux*n+px*n*.55,y-uy*n+py*n*.55);
+    ctx.moveTo(x,y);ctx.lineTo(x-ux*n-px*n*.55,y-uy*n-py*n*.55);
+    ctx.stroke();
+  }
 
-    x += Number(campata.interasse || 0);
+  let x=0;
+  s.campate.forEach((campata,index)=>{
+    const span=Number(campata.interasse||0);
+    disegnaPilastro(x,0,"P"+(index*2+1),ox,oy,sc,s);
+    disegnaPilastro(x,W,"P"+(index*2+2),ox,oy,sc,s);
+    ctx.strokeStyle="#56687c";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(ox+x*sc,oy-8);ctx.lineTo(ox+x*sc,oy+W*sc+8);ctx.stroke();
+    quota(ox+x*sc,oy-28,ox+(x+span)*sc,oy-28,span.toFixed(2)+" m");
+    x+=span;
   });
 
-  disegnaPilastro(
-    L,
-    0,
-    "P" + (s.campate.length * 2 + 1),
-    ox,
-    oy,
-    sc
-  );
+  disegnaPilastro(L,0,"P"+(s.campate.length*2+1),ox,oy,sc,s);
+  disegnaPilastro(L,W,"P"+(s.campate.length*2+2),ox,oy,sc,s);
+  quota(ox,oy-58,ox+L*sc,oy-58,"Lunghezza "+L.toFixed(2)+" m");
+  quota(ox+L*sc+42,oy,ox+L*sc+42,oy+W*sc,W.toFixed(2)+" m");
 
-  disegnaPilastro(
-    L,
-    W,
-    "P" + (s.campate.length * 2 + 2),
-    ox,
-    oy,
-    sc
-  );
-
-  ctx.setLineDash([8, 6]);
-  ctx.strokeStyle = "#e55b5b";
-
-  ctx.beginPath();
-  ctx.moveTo(ox, oy + W * sc / 2);
-  ctx.lineTo(ox + L * sc, oy + W * sc / 2);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(ox + L * sc / 2, oy);
-  ctx.lineTo(ox + L * sc / 2, oy + W * sc);
-  ctx.stroke();
-
+  const yAA=oy+W*sc/2,xBB=ox+L*sc/2;
+  ctx.setLineDash([9,6]);ctx.strokeStyle="#e55b5b";ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(ox,yAA);ctx.lineTo(ox+L*sc,yAA);ctx.stroke();
+  freccia(ox+2,yAA,1,0);freccia(ox+L*sc-2,yAA,-1,0);
+  ctx.beginPath();ctx.moveTo(xBB,oy);ctx.lineTo(xBB,oy+W*sc);ctx.stroke();
+  freccia(xBB,oy+2,0,1);freccia(xBB,oy+W*sc-2,0,-1);
   ctx.setLineDash([]);
 
-  ctx.fillStyle = "#e9eef5";
-  ctx.font = "12px monospace";
-
-  ctx.fillText(
-    "A-A",
-    ox + L * sc / 2,
-    oy + W * sc / 2 - 8
-  );
-
-  ctx.fillText(
-    "B-B",
-    ox + L * sc / 2 + 8,
-    oy + W * sc / 2
-  );
-
-  ctx.fillText(
-    "N â†‘",
-    ox + 10,
-    oy + 18
-  );
-
-  ctx.fillText(
-    "Lunghezza " + L.toFixed(2) + " m",
-    ox + L * sc / 2 - 45,
-    oy - 25
-  );
-
-  ctx.fillText(
-    "Luce " + W.toFixed(2) + " m",
-    ox + L * sc + 12,
-    oy + W * sc / 2
-  );
+  ctx.fillStyle="#ff7070";ctx.font="12px monospace";ctx.textAlign="center";
+  ctx.fillText("A",ox-16,yAA);ctx.fillText("A",ox+L*sc+16,yAA);
+  ctx.fillText("B",xBB,oy-16);ctx.fillText("B",xBB,oy+W*sc+16);
+  ctx.textAlign="left";
+  ctx.fillStyle="#e9eef5";ctx.font="12px monospace";ctx.fillText("N!‘",ox+10,oy+18);
 }
 
 export function aggiornaPianta(s) {
