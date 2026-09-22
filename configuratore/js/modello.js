@@ -1,130 +1,55 @@
-// modello.js — Definizione dello stato del configuratore e utilità di calcolo
+// modello.js — Stato strutturale CACEM e calcoli derivati
+import { trovaPilastro, trovaTrave, trovaTegolo, trovaSolaio } from './catalogo.js';
 
 export const DEFAULT_STATO = {
-  dimensioni: {
-    lunghezza: 60,
-    larghezza: 30,
-    altezzaPilastro: 6,
-    pendenzaCopertura: 5,
-    numeroCampate: 4,
-    interasseCampate: 15,
-    numeroPilastriPerFila: 5,
-  },
-  elementi: {
-    sezionePilastro: '40x40',
-    tipoTrave: 'aT',
-    spessorePannello: 20,
-  },
-  meta: { versione: '0.2', timestamp: null },
+  generale:{luce:30,altezzaPilastro:6,pendenzaCopertura:5,interpiano:false,altezzaInterpiano:3.5,carroponte:false,portataCarroponte:0},
+  campate:[{id:1,interasse:15},{id:2,interasse:15},{id:3,interasse:15},{id:4,interasse:15}],
+  pilastri:{tipoId:'P40x40',pluviale:true,fondazione:'bicchiere'},
+  travi:{tipoId:'TL'},
+  copertura:{tegoloId:'AL'},
+  pannelli:{tipo:'V',spessore:20,finitura:'FV',coloriGraniglia:['#d9d2c5','#b8b0a0'],percentualiGraniglia:[70,30],lati:{nord:true,sud:true,est:true,ovest:true}},
+  mensole:{attive:[]},
+  meta:{versione:'0.3',timestamp:null}
 };
+export function statoDefault(){return JSON.parse(JSON.stringify(DEFAULT_STATO));}
+export function clonaStato(s){return JSON.parse(JSON.stringify(s));}
+export function lunghezzaTotale(stato){return stato.campate.reduce((a,c)=>a+(Number(c.interasse)||0),0);}
 
-export function statoDefault() {
-  return JSON.parse(JSON.stringify(DEFAULT_STATO));
-}
-
-export function clonaStato(stato) {
-  return JSON.parse(JSON.stringify(stato));
-}
-
-export function parseSezione(sezione) {
-  const [l, h] = sezione.split('x').map(v => parseInt(v, 10) / 100);
-  return { l, h };
-}
-
-export function calcolaDerivati(stato) {
-  const d = stato.dimensioni;
-  const e = stato.elementi;
-  const superficieCoperta = d.lunghezza * d.larghezza;
-  const altezzaTotale = d.altezzaPilastro + (d.larghezza / 2) * (d.pendenzaCopertura / 100);
-  const numPilastri = d.numeroPilastriPerFila * 2 * d.numeroCampate;
-  const sezione = parseSezione(e.sezionePilastro);
-  const volumePilastroSingolo = sezione.l * sezione.h * d.altezzaPilastro;
-  const volumePilastri = volumePilastroSingolo * numPilastri;
-
-  const lunghezzaTraveColmo = d.lunghezza;
-  const altezzaTrave = 0.8;
-  const baseTrave = 0.5;
-  const numTraviTrasversali = (d.numeroCampate + 1) * 2;
-  const lunghezzaTraveTrasversale = d.larghezza / 2;
-  const volumeTraveColmo = lunghezzaTraveColmo * baseTrave * altezzaTrave;
-  const volumeTraviTrasversali = numTraviTrasversali * lunghezzaTraveTrasversale * baseTrave * altezzaTrave;
-  const volumeTravi = volumeTraveColmo + volumeTraviTrasversali;
-
-  const perimetro = 2 * (d.lunghezza + d.larghezza);
-  const spessorePannelloM = e.spessorePannello / 100;
-  const volumePannelli = perimetro * d.altezzaPilastro * spessorePannelloM;
-
-  const spessoreCoperturaM = 0.25;
-  const lunghezzaFalda = Math.sqrt((d.larghezza / 2) ** 2 + ((d.larghezza / 2) * (d.pendenzaCopertura / 100)) ** 2);
-  const superficieCopertura = 2 * d.lunghezza * lunghezzaFalda;
-  const volumeCopertura = superficieCopertura * spessoreCoperturaM;
-
-  const volumeTotale = volumePilastri + volumeTravi + volumePannelli + volumeCopertura;
-  const densitaCalcestruzzo = 2.5;
-  const pesoStimato = volumeTotale * densitaCalcestruzzo;
-
-  const distinta = [
-    { elemento: 'Pilastri', quantita: numPilastri, dimensioni: `${e.sezionePilastro} cm × ${d.altezzaPilastro} m`, volume: volumePilastri, peso: volumePilastri * densitaCalcestruzzo },
-    { elemento: 'Trave di colmo', quantita: 1, dimensioni: `${baseTrave * 100}×${altezzaTrave * 100} cm × ${lunghezzaTraveColmo} m`, volume: volumeTraveColmo, peso: volumeTraveColmo * densitaCalcestruzzo },
-    { elemento: 'Travi trasversali', quantita: numTraviTrasversali, dimensioni: `${baseTrave * 100}×${altezzaTrave * 100} cm × ${lunghezzaTraveTrasversale} m`, volume: volumeTraviTrasversali, peso: volumeTraviTrasversali * densitaCalcestruzzo },
-    { elemento: 'Pannelli tamponamento', quantita: 1, dimensioni: `sp. ${e.spessorePannello} cm · h ${d.altezzaPilastro} m`, volume: volumePannelli, peso: volumePannelli * densitaCalcestruzzo },
-    { elemento: 'Copertura', quantita: 1, dimensioni: `sp. 25 cm · sup. ${superficieCopertura.toFixed(1)} m²`, volume: volumeCopertura, peso: volumeCopertura * densitaCalcestruzzo },
+export function calcolaDerivati(stato){
+  const g=stato.generale,L=lunghezzaTotale(stato),W=Number(g.luce)||0,H=Number(g.altezzaPilastro)||0;
+  const salita=(W/2)*(Number(g.pendenzaCopertura)||0)/100,Hcolmo=H+salita;
+  const pil=trovaPilastro(stato.pilastri.tipoId),tra=trovaTrave(stato.travi.tipoId),teg=trovaTegolo(stato.copertura.tegoloId);
+  const numPerFila=stato.campate.length+1,numPilastri=numPerFila*2;
+  const sl=pil.sezione.l/100,sh=pil.sezione.h/100,volPil=sl*sh*H*numPilastri;
+  const altTr=tra.altezza/100,baseTr=tra.base/100;
+  const volTrBanch=L*baseTr*altTr*2;
+  const numTrFalda=stato.campate.length+1,luceFalda=W/2;
+  const volTrFalda=numTrFalda*2*luceFalda*baseTr*altTr;
+  const lungFalda=Math.sqrt(luceFalda**2+salita**2);
+  const numTegoli=Math.max(2,Math.ceil(L/(teg.larghezza/100))*2);
+  const volTegoloSingolo=(teg.larghezza/100)*(teg.altezza/100)*lungFalda;
+  const volCop=numTegoli*volTegoloSingolo;
+  const sp=Number(stato.pannelli.spessore)/100,perimetro=2*(L+W),volPannelli=perimetro*H*sp;
+  const volInterpiano=g.interpiano?L*W*0.25:0;
+  const volTot=volPil+volTrBanch+volTrFalda+volPannelli+volCop+volInterpiano;
+  const densita=2.5;
+  const distinta=[
+    {elemento:`Pilastri ${pil.nome}`,quantita:numPilastri,dimensioni:`${pil.sezione.l}×${pil.sezione.h} cm × h ${H} m`,volume:volPil,peso:volPil*densita},
+    {elemento:`Travi banchina ${tra.nome}`,quantita:2,dimensioni:`${tra.base}×${tra.altezza} cm × ${L.toFixed(2)} m`,volume:volTrBanch,peso:volTrBanch*densita},
+    {elemento:`Travi trasversali ${tra.nome}`,quantita:numTrFalda*2,dimensioni:`${tra.base}×${tra.altezza} cm × ${lungFalda.toFixed(2)} m`,volume:volTrFalda,peso:volTrFalda*densita},
+    {elemento:`Tegoli ${teg.nome}`,quantita:numTegoli,dimensioni:`${teg.larghezza}×${teg.altezza} cm × ${lungFalda.toFixed(2)} m`,volume:volCop,peso:volCop*densita},
+    {elemento:'Pannelli tamponamento',quantita:1,dimensioni:`sp. ${stato.pannelli.spessore} cm · h ${H} m · ${perimetro.toFixed(1)} m lineari`,volume:volPannelli,peso:volPannelli*densita}
   ];
-
-  return { superficieCoperta, altezzaTotale, numPilastri, volumeTotale, pesoStimato, distinta };
-}
-
-export function salvaStato(stato, chiave = 'cacem-stato') {
-  const copia = clonaStato(stato);
-  copia.meta.timestamp = new Date().toISOString();
-  localStorage.setItem(chiave, JSON.stringify(copia));
-  return copia;
-}
-
-export function caricaStato(chiave = 'cacem-stato') {
-  const raw = localStorage.getItem(chiave);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed.dimensioni || !parsed.elementi) return null;
-    return parsed;
-  } catch {
-    return null;
+  if(g.interpiano){
+    const solaio=trovaSolaio('TT');
+    distinta.push({elemento:`Solaio ${solaio.nome}`,quantita:1,dimensioni:`${L.toFixed(1)}×${W.toFixed(1)} m · sp. ${solaio.altezza} cm`,volume:volInterpiano,peso:volInterpiano*densita});
   }
+  return {L,W,H,Hcolmo,salita,numPilastri,numPerFila,superficieCoperta:L*W,volumeTotale:volTot,pesoStimato:volTot*densita,distinta};
 }
 
-export function cancellaStato(chiave = 'cacem-stato') {
-  localStorage.removeItem(chiave);
-}
-
-export function esportaJSON(stato, nomeFile = 'cacem-progetto.json') {
-  const blob = new Blob([JSON.stringify(stato, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = nomeFile;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
-export function importaJSON() {
-  return new Promise((resolve, reject) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = ev => {
-      const file = ev.target.files[0];
-      if (!file) return reject(new Error('Nessun file selezionato'));
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          if (!parsed.dimensioni || !parsed.elementi) return reject(new Error('Formato non valido'));
-          resolve(parsed);
-        } catch (err) { reject(err); }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  });
-}
+const CHIAVE='cacem-stato-v3';
+export function salvaStato(stato){const c=clonaStato(stato);c.meta.timestamp=new Date().toISOString();localStorage.setItem(CHIAVE,JSON.stringify(c));return c;}
+export function caricaStato(){const raw=localStorage.getItem(CHIAVE);if(!raw)return null;try{const p=JSON.parse(raw);if(!p.generale||!p.campate)return null;return p;}catch{return null;}}
+export function cancellaStato(){localStorage.removeItem(CHIAVE);}
+export function esportaJSON(stato,nomeFile='cacem-progetto.json'){const blob=new Blob([JSON.stringify(stato,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=nomeFile;a.click();setTimeout(()=>URL.revokeObjectURL(url),0);}
+export function importaJSON(){return new Promise((resolve,reject)=>{const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=e=>{const f=e.target.files[0];if(!f)return reject(new Error('Nessun file selezionato'));const r=new FileReader();r.onload=x=>{try{const p=JSON.parse(x.target.result);if(!p.generale||!p.campate)return reject(new Error('Formato non valido'));resolve(p);}catch(err){reject(err);}};r.readAsText(f);};input.click();});}
