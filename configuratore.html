@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CACEM CONFIGURATORE</title>
-<link rel="icon" href="cacem-logo.svg"><link rel="stylesheet" href="configuratore.css">
+<link rel="icon" href="cacem-logo.svg">
+<link rel="stylesheet" href="configuratore.css">
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
@@ -11,36 +12,94 @@
 <div id="app">
 <header class="top">
  <div class="brand"><img src="cacem-logo.svg"><div><b>CACEM</b><span>CONFIGURATORE STRUTTURALE</span></div></div>
- <div class="project"><span class="dot"></span><b id="projectName">Nuovo progetto</b><small>MODELLO CENTRALE</small></div>
+ <div class="project"><span class="dot"></span><div><b id="projectName">Nuovo capannone</b><small>MODELLO CENTRALE · ELEMENTI APPROSSIMATIVI</small></div></div>
  <div class="topActions"><button id="undo">↶</button><button id="redo">↷</button><button id="save">SALVA</button><button class="primary" id="export">ESPORTA DXF</button></div>
 </header>
 <nav class="tabs">
- <button class="active" data-view="3d">MODELLO 3D</button><button data-view="plan">PIANTA PILASTRI</button><button data-view="floor">INTERPIANO</button><button data-view="roof">COPERTURA</button><button data-view="front">PROSPETTO</button><button data-view="section">SEZIONE</button><button data-view="render">RENDER</button>
+ <button class="active" data-view="3d">MODELLO 3D</button>
+ <button data-view="plan">PIANTA</button>
+ <button data-view="floor">INTERPIANO</button>
+ <button data-view="roof">COPERTURA</button>
+ <button data-view="front">PROSPETTO 1</button>
+ <button data-view="elev2">PROSPETTO 2</button>
+ <button data-view="elev3">PROSPETTO 3</button>
+ <button data-view="elev4">PROSPETTO 4</button>
+ <button data-view="sectionLong">SEZIONE L</button>
+ <button data-view="sectionTrans">SEZIONE T</button>
+ <button data-view="summary">DISTINTA</button>
 </nav>
 <main>
 <aside class="left">
- <div class="panelTitle">LIBRERIA CACEM</div><input id="search" class="search" placeholder="Cerca elemento...">
- <div class="libGroup"><label>PILASTRI</label><button class="libItem" data-add="PP2"><span class="swatch pillar"></span><span><b>PP2</b><small>Pilastro 600 × 600</small></span><i>+</i></button></div>
- <div class="libGroup"><label>TRAVI</label><button class="libItem" data-add="TL"><span class="swatch beam"></span><span><b>TL</b><small>Trave prefabbricata</small></span><i>+</i></button></div>
- <div class="libGroup"><label>COMPONENTI</label><button class="libItem" data-add="FLOOR"><span class="swatch floor"></span><span><b>INTERPIANO</b><small>Livello strutturale</small></span><i>+</i></button><button class="libItem" data-add="ROOF"><span class="swatch roof"></span><span><b>COPERTURA</b><small>Livello di copertura</small></span><i>+</i></button></div>
- <div class="libGroup"><label>IMPORTA GEOMETRIA REALE</label><label class="fileBtn">CARICA DXF CACEM<input id="dxfInput" type="file" accept=".dxf"></label><small class="hint">La geometria DXF fornita dall'utente rimane la sorgente ufficiale del catalogo.</small></div>
+ <div class="panelTitle">LIBRERIA ELEMENTI</div>
+ <input id="search" class="search" placeholder="Cerca elemento...">
+ <div id="library"></div>
+ <div class="libGroup">
+   <label>FILE DI RIFERIMENTO</label>
+   <label class="fileBtn">CARICA DXF CACEM<input id="dxfInput" type="file" accept=".dxf"></label>
+   <small class="hint">La geometria reale verrà usata nella fase di verifica. Per ora il motore usa profili parametrici approssimativi.</small>
+ </div>
 </aside>
 <section class="workspace">
- <div class="toolbar"><button id="fit">ADATTA</button><button id="grid" class="on">GRIGLIA</button><button id="snap" class="on">SNAP</button><span></span><button id="modeSelect" class="tool active">SELEZIONA</button><button id="modeMove" class="tool">SPOSTA</button><button id="delete" class="danger">ELIMINA</button></div>
+ <div class="toolbar">
+  <button id="fit">ADATTA</button><button id="grid" class="on">GRIGLIA</button><button id="snap" class="on">SNAP</button>
+  <span></span><button id="modeSelect" class="tool active">SELEZIONA</button><button id="modeMove" class="tool">SPOSTA</button><button id="delete" class="danger">ELIMINA</button>
+ </div>
  <div id="viewport"></div>
  <div id="viewBadge">MODELLO 3D</div>
- <div class="navCube"><button data-view="3d">3D</button><button data-view="front">FR</button><button data-view="plan">TOP</button><button data-view="section">SEZ</button></div>
- <div class="metrics"><div><small>CAMPATE</small><b id="mBays">4</b></div><div><small>PILASTRI</small><b id="mPillars">10</b></div><div><small>TRAVI</small><b id="mBeams">8</b></div><div><small>LIVELLI</small><b id="mLevels">1</b></div></div>
+ <div class="viewTools"><button data-view="3d">3D</button><button data-view="plan">TOP</button><button data-view="front">1</button><button data-view="elev2">2</button><button data-view="elev3">3</button><button data-view="elev4">4</button><button data-view="sectionLong">SL</button><button data-view="sectionTrans">ST</button></div>
+ <div id="drawingInfo"></div>
+ <div class="metrics"><div><small>CAMPATE</small><b id="mBays">4</b></div><div><small>PILASTRI</small><b id="mPillars">10</b></div><div><small>ELEMENTI</small><b id="mElements">0</b></div><div><small>PESO</small><b id="mWeight">0 t</b></div></div>
 </section>
 <aside class="right">
  <div class="panelTitle">CONFIGURAZIONE</div>
- <div class="section"><label>MAGLIA STRUTTURALE</label><div class="row"><div><small>CAMPATE</small><input id="bays" type="number" min="1" max="40" value="4"></div><div><small>INTERASSE (cm)</small><input id="spacing" type="number" min="100" value="600"></div></div><div class="row"><div><small>PROFONDITÀ (cm)</small><input id="depth" type="number" min="100" value="1800"></div><div><small>ALTEZZA (cm)</small><input id="height" type="number" min="100" value="750"></div></div><button id="applyGrid" class="wide primary">AGGIORNA MAGLIA</button></div>
- <div class="section"><label>ELEMENTO SELEZIONATO</label><div id="emptySel" class="empty">Nessun elemento selezionato</div><div id="props" hidden><div class="selectedName" id="selName"></div><div class="row"><div><small>X (cm)</small><input id="px" type="number"></div><div><small>Y (cm)</small><input id="py" type="number"></div></div><div class="row"><div><small>Z (cm)</small><input id="pz" type="number"></div><div><small>ROT (°)</small><input id="prot" type="number"></div></div><label class="check"><input id="pluv" type="checkbox"> PLUVIALE PP2</label><button id="applyProps" class="wide">APPLICA</button></div></div>
- <div class="section"><label>LIVELLI</label><div id="levels"></div><button id="addLevel" class="wide">+ AGGIUNGI INTERPIANO</button></div>
- <div class="section"><label>UNITÀ</label><div class="unit">cm <span>quotatura DXF</span></div></div>
+ <div class="section">
+  <label>PROGETTO</label>
+  <div class="row"><div><small>NOME</small><input id="projectInput" value="Nuovo capannone"></div><div><small>UNITÀ</small><select id="unit"><option>cm</option><option>m</option></select></div></div>
+ </div>
+ <div class="section">
+  <label>MAGLIA STRUTTURALE</label>
+  <div class="row"><div><small>CAMPATE</small><input id="bays" type="number" min="1" max="30" value="6"></div><div><small>INTERASSE X (cm)</small><input id="spacing" type="number" min="300" value="900"></div></div>
+  <div class="row"><div><small>PROFONDITÀ (cm)</small><input id="depth" type="number" min="600" value="1500"></div><div><small>ALTEZZA PILASTRO (cm)</small><input id="height" type="number" min="300" value="800"></div></div>
+  <button id="applyGrid" class="wide primary">APPLICA MAGLIA</button>
+ </div>
+ <div class="section">
+  <label>PILASTRI</label>
+  <div class="row"><div><small>TIPO</small><select id="pillarType"><option>PP1</option><option selected>PP2</option><option>PP4</option><option>PP5</option><option>PP6</option><option>PP7</option><option>PP8</option><option>PP9</option><option>PP10</option></select></div><div><small>SEZIONE (cm)</small><input id="pillarSize" type="number" value="60"></div></div>
+  <div class="row"><div><small>PLUVIALE Ø (mm)</small><input id="drainDia" type="number" value="160"></div><div><small>FONDAZIONE</small><select id="foundation"><option>BICCHIERE</option><option>ARMATUBO</option></select></div></div>
+ </div>
+ <div class="section">
+  <label>TRAVI</label>
+  <div class="row"><div><small>TIPO LONGITUDINALE</small><select id="beamLong"><option>TL</option><option>TD</option><option>TDR</option><option>TLR</option><option>R</option><option>TU</option><option>TI</option><option>TNL</option></select></div><div><small>ALTEZZA (cm)</small><input id="beamH" type="number" value="75"></div></div>
+  <div class="row"><div><small>TIPO TRASVERSALE</small><select id="beamTrans"><option>TL</option><option>TD</option><option>TDR</option><option>TLR</option><option>R</option><option>TU</option><option>TI</option><option>TNL</option></select></div><div><small>LARGHEZZA (cm)</small><input id="beamW" type="number" value="50"></div></div>
+ </div>
+ <div class="section">
+  <label>INTERPIANO</label>
+  <div class="row"><div><small>PRESENTE</small><select id="floorOn"><option>NO</option><option>SI</option></select></div><div><small>QUOTA (cm)</small><input id="floorZ" type="number" value="400"></div></div>
+  <div class="row"><div><small>SOLAIO</small><select id="floorType"><option>TT</option><option>LL</option></select></div><div><small>SPESSORE (cm)</small><input id="floorT" type="number" value="25"></div></div>
+ </div>
+ <div class="section">
+  <label>COPERTURA</label>
+  <div class="row"><div><small>TEGOLO</small><select id="roofType"><option>AL</option><option>TY</option></select></div><div><small>PENDENZA (%)</small><input id="roofSlope" type="number" value="7"></div></div>
+  <div class="row"><div><small>COPPELLE</small><select id="coping"><option>CURVA PICCOLA</option><option>CURVA GRANDE</option><option>CURVA SPECIALE</option><option>LAMIERA</option></select></div><div><small>SPESSORE (cm)</small><input id="roofT" type="number" value="12"></div></div>
+ </div>
+ <div class="section">
+  <label>PANNELLI TAMPONAMENTO</label>
+  <div class="row"><div><small>TIPO</small><select id="panelType"><option>VERTICALE</option><option>ORIZZONTALE</option></select></div><div><small>SPESSORE (cm)</small><select id="panelT"><option>20</option><option selected>24</option><option>28</option></select></div></div>
+  <div class="row"><div><small>FINITURA</small><select id="finish"><option>FACCIA VISTA</option><option>GRANIGLIATO</option></select></div><div><small>COLORE 1 %</small><input id="gran1" type="number" min="0" max="100" value="50"></div></div>
+  <div class="row"><div><small>COLORE 2 %</small><input id="gran2" type="number" min="0" max="100" value="50"></div><div><small>NOTE</small><input id="finishNote" placeholder="es. bianco/grigio"></div></div>
+ </div>
+ <div class="section">
+  <label>MENSOLE</label>
+  <div class="checkList"><label><input id="consoleFloor" type="checkbox" checked> MENSOLA SOLAIO</label><label><input id="consoleBeam" type="checkbox"> MENSOLA TRAVE</label><label><input id="consoleCrane" type="checkbox"> MENSOLA CARROPONTE</label></div>
+ </div>
+ <div class="section">
+  <label>ELEMENTO SELEZIONATO</label>
+  <div id="emptySel" class="empty">Seleziona un elemento nel modello</div>
+  <div id="props" hidden><div class="selectedName" id="selName"></div><div class="row"><div><small>X (cm)</small><input id="px" type="number"></div><div><small>Y (cm)</small><input id="py" type="number"></div></div><div class="row"><div><small>Z (cm)</small><input id="pz" type="number"></div><div><small>ROT (°)</small><input id="prot" type="number"></div></div><button id="applyProps" class="wide">APPLICA POSIZIONE</button></div>
+ </div>
 </aside>
 </main>
-<footer><span>● MODELLO SINCRONIZZATO</span><span id="status">Pronto</span><span>CACEM · v0.2 · motore strutturale</span></footer>
+<footer><span>● MODELLO SINCRONIZZATO</span><span id="status">Pronto</span><span id="footSource">CACEM · modello parametrico · geometria da verificare</span></footer>
 </div>
 <script src="configuratore.js"></script>
 </body></html>
