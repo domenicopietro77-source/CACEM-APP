@@ -1,5 +1,6 @@
 // trigger redeploy
 import * as THREE from "three";
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene;
@@ -13,25 +14,37 @@ export function inizializzaScena3D() {
   const container = document.getElementById("threeView");
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x2a3240);
-  scene.fog = new THREE.Fog(0x2a3240, 80, 260);
+  scene.background = new THREE.Color(0x2a2f3a);
+  scene.fog = null;
 
   camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.0;
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
   container.appendChild(renderer.domElement);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x607080, 1.7));
-
-  const directional = new THREE.DirectionalLight(0xffffff, 1.1);
-  directional.position.set(30, 50, 30);
-  scene.add(directional);
-
-  scene.add(new THREE.GridHelper(100, 100, 0x607080, 0x3b4654));
+  scene.add(new THREE.HemisphereLight(0x9fc7ff,0x6d7278,1.15));
+  scene.add(new THREE.AmbientLight(0xffffff,0.22));
+  const directional=new THREE.DirectionalLight(0xffffff,2.2);
+  directional.position.set(35,55,25); directional.castShadow=true;
+  directional.shadow.mapSize.set(2048,2048);
+  directional.shadow.camera.near=1; directional.shadow.camera.far=220;
+  directional.shadow.camera.left=-80; directional.shadow.camera.right=80;
+  directional.shadow.camera.top=80; directional.shadow.camera.bottom=-80;
+  directional.shadow.bias=-0.0005; scene.add(directional);
+  new RGBELoader().load("https://threejs.org/examples/textures/equirectangular/royal_esplanade_1k.hdr",texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;scene.environment=texture;},undefined,()=>{});
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({color:0x4a5058,roughness:0.95,metalness:0}));
+  ground.rotation.x=-Math.PI/2; ground.position.y=-0.22; ground.receiveShadow=true; scene.add(ground);
+  const grid=new THREE.GridHelper(160,80,0x8a9098,0x5d636c);
+  grid.position.y=-0.205; grid.material.transparent=true; grid.material.opacity=0.15; scene.add(grid);
 
   group = new THREE.Group();
   scene.add(group);
@@ -49,9 +62,11 @@ function animate() {
   }
 }
 
-function creaMateriale(colore) {
+function creaMateriale(colore, roughness=0.9, metalness=0.0) {
   return new THREE.MeshStandardMaterial({
     color: colore,
+    roughness,
+    metalness,
     wireframe: wire
   });
 }
@@ -70,12 +85,14 @@ function creaBox(
   x,
   y,
   z,
-  colore = 0x87929d
+  colore = 0xc8c4bc
 ) {
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(sizeX, sizeY, sizeZ),
     creaMateriale(colore)
   );
+  mesh.castShadow=true;
+  mesh.receiveShadow=true;
 
   mesh.position.set(x, y, z);
   group.add(mesh);
@@ -106,7 +123,7 @@ function creaFalda(
     lato === "sud"
       ? halfW / 2
       : halfW + halfW / 2,
-    0x9ca6af
+    0xbfb8a8
   );
 
   /*
@@ -139,7 +156,7 @@ function creaParete(
     x,
     y,
     z,
-    0x607080
+    0x8a8a8a
   );
 }
 
@@ -185,6 +202,8 @@ export function aggiornaScena3D(s) {
    * Entrambe le file hanno esattamente la stessa altezza H.
    */
   xs.forEach(px => {
+    creaBox(0.9,0.8,0.9,px,-0.62,0,0x6a6a6a);
+    creaBox(0.9,0.8,0.9,px,-0.62,W,0x6a6a6a);
     creaBox(
       basePilastro,
       H,
@@ -277,8 +296,11 @@ export function aggiornaScena3D(s) {
   /*
    * PARETI CONTINUE PERIMETRALI.
    */
-  const spessorePannello =
-    Number(s.pannelli.spessore || 0) / 100;
+  const spessorePannello=Number(s.pannelli.spessore||0)/100;
+  const colorePannelloA=Number.parseInt(String(s.pannelli.colori?.A||"#d0cbc0").replace("#",""),16);
+  const colorePannelloB=Number.parseInt(String(s.pannelli.colori?.B||"#b0b0b0").replace("#",""),16);
+  const pannelloA=s.pannelli.finitura==="GR"?colorePannelloA:0xd0cbc0;
+  const pannelloB=s.pannelli.finitura==="GR"?colorePannelloB:0xd0cbc0;
 
   creaParete(
     L,
@@ -286,7 +308,8 @@ export function aggiornaScena3D(s) {
     spessorePannello,
     L / 2,
     H / 2,
-    0
+    0,
+    pannelloA
   );
 
   creaParete(
@@ -295,7 +318,8 @@ export function aggiornaScena3D(s) {
     spessorePannello,
     L / 2,
     H / 2,
-    W
+    W,
+    pannelloB
   );
 
   creaParete(
@@ -304,7 +328,8 @@ export function aggiornaScena3D(s) {
     W,
     0,
     H / 2,
-    W / 2
+    W / 2,
+    pannelloA
   );
 
   creaParete(
@@ -313,7 +338,8 @@ export function aggiornaScena3D(s) {
     W,
     L,
     H / 2,
-    W / 2
+    W / 2,
+    pannelloB
   );
 
   /*
@@ -354,7 +380,7 @@ export function aggiornaScena3D(s) {
       L / 2,
       quotaCarroponte,
       W / 2,
-      0x9ca6af
+      0xd4d0c8
     );
   }
 
@@ -374,6 +400,8 @@ function trovaDimensioneTrave(s, campo, fallbackCm) {
     fallbackCm
   );
 }
+
+function creaMaterialeFerro(colore=0x6b7280){return new THREE.MeshStandardMaterial({color:colore,roughness:0.4,metalness:0.8,wireframe:wire});}
 
 function creaTraveTrasversale(
   x,
@@ -417,7 +445,7 @@ function creaTraveTrasversale(
       x,
       H + rise / 2,
       zCenter,
-      0x9ca6af
+      0xd4d0c8
     );
 
     mesh.rotation.x = rotation;
