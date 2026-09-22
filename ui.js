@@ -36,7 +36,7 @@ export function inizializzaUI(s, onChange) {
 
   /*
    * The pillar section is defined by two independent dimensions.
-   * There is intentionally no pilastroTipo select anymore.
+   * There is intentionally no fixed pillar-type selector anymore.
    */
   PILASTRO_NUMBER_INPUTS.forEach(id => {
     $(id).addEventListener("input", () => {
