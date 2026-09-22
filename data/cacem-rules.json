@@ -1,0 +1,30 @@
+{
+  "version":"1.0",
+  "rules":[
+    {
+      "id":"floor-enabled",
+      "when":{"field":"floorOn","equals":true},
+      "enable":["floorZ","floorType","floorT","consoleFloor"]
+    },
+    {
+      "id":"floor-disabled",
+      "when":{"field":"floorOn","equals":false},
+      "disable":["floorZ","floorType","floorT","consoleFloor"]
+    },
+    {
+      "id":"granigliato",
+      "when":{"field":"finish","equals":"GRANIGLIATO"},
+      "enable":["gran1","gran2"]
+    },
+    {
+      "id":"faccia-vista",
+      "when":{"field":"finish","equals":"FACCIA VISTA"},
+      "disable":["gran1","gran2"]
+    },
+    {
+      "id":"pillar-type",
+      "when":{"field":"pillarType","in":["PP1","PP2","PP4","PP5","PP6","PP7","PP8","PP9","PP10"]},
+      "enable":["pillarSize","drainDia","foundation"]
+    }
+  ]
+}
