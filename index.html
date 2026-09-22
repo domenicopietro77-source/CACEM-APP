@@ -1,335 +1,270 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CACEM · Configuratore Capannoni Prefabbricati in Cemento</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CACEM · Configuratore Capannoni</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/dxf-writer@1.18.4/dist/dxf-writer.min.js"></script>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
 </head>
 <body>
-  <div
-    id="errorPanel"
-    style="display:none; position:fixed; top:0; left:0; right:0; background:#a00; color:#fff; padding:10px; font-family:monospace; font-size:12px; z-index:99999; max-height:40vh; overflow:auto;"
-  >
-    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-      <b>ERRORI RILEVATI:</b>
-      <button
-        onclick="document.getElementById('errorPanel').style.display='none'"
-        style="background:#fff; color:#a00; border:none; padding:2px 8px; cursor:pointer;"
-      >
-        Chiudi
-      </button>
-    </div>
-    <div id="errorList"></div>
-  </div>
 
-  <header>
-    <div class="brand">
-      <b>CACEM</b>
-      <span>Configuratore Capannoni Prefabbricati in Cemento</span>
+<!-- ============ SCHERMATA COMMESSE ============ -->
+<div id="schermata-commesse" class="schermata">
+  <header class="topbar-commesse">
+    <div class="logo">CACEM</div>
+    <h1>Le tue commesse</h1>
+    <div class="topbar-actions">
+      <button id="btn-importa-commessa" class="btn">Importa da file</button>
+      <button id="btn-nuova-commessa" class="btn btn-primary">+ Nuova commessa</button>
     </div>
-    <div>
-      <button id="saveBtn">Salva</button>
-      <button id="loadBtn">Carica</button>
-      <button id="resetBtn">Reset</button>
-      <input id="loadFile" type="file" accept=".json" hidden>
+  </header>
+  <div id="commesse-lista" class="commesse-lista">
+    <!-- Card generate dinamicamente da ui.js -->
+  </div>
+  <div id="commesse-vuote" class="commesse-vuote" style="display:none;">
+    <p>Nessuna commessa presente.</p>
+    <p>Clicca <strong>+ Nuova commessa</strong> per iniziare.</p>
+  </div>
+</div>
+
+<!-- ============ EDITOR ============ -->
+<div id="schermata-editor" class="schermata" style="display:none">
+
+  <header class="topbar">
+    <div class="logo">CACEM</div>
+    <div class="breadcrumb">
+      <button id="btn-torna-commesse" class="btn btn-back">← Commesse</button>
+      <span id="commessa-nome">—</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="btn-salva" class="btn">Salva</button>
+      <button id="btn-esporta-commessa" class="btn">Esporta</button>
     </div>
   </header>
 
-  <div class="app">
-    <aside class="left">
-      <section>
-        <h3>GENERALE</h3>
+  <main class="layout">
 
-        <label>
-          Luce (m)
-          <input id="luce" type="number" step=".1">
-        </label>
+    <!-- COLONNA SINISTRA -->
+    <aside class="panel panel-left">
 
-        <label>
-          Altezza pilastro (m)
-          <input id="altezzaPilastro" type="number" step=".1">
-        </label>
+      <h2>Misure esterne</h2>
+      <label>Lunghezza esterna (m)
+        <input type="number" id="ext-lunghezza" step="0.1" min="5" max="200" value="60">
+      </label>
+      <label>Larghezza esterna (m)
+        <input type="number" id="ext-larghezza" step="0.1" min="5" max="100" value="30">
+      </label>
+      <label>Spessore pannello
+        <select id="ext-spessore-pannello">
+          <option value="20">20 + 1 cm tolleranza</option>
+          <option value="24">24 + 1 cm tolleranza</option>
+          <option value="28">28 + 2 cm tolleranza</option>
+        </select>
+      </label>
+      <div class="info-box">
+        <div>Lunghezza interna: <span id="info-lung-interna">—</span> m</div>
+        <div>Larghezza interna: <span id="info-larg-interna">—</span> m</div>
+      </div>
 
-        <label>
-          Pendenza copertura (%)
-          <input id="pendenzaCopertura" type="number" step=".1">
-        </label>
+      <h2>Campate</h2>
+      <label>Verso campate
+        <select id="campate-verso">
+          <option value="X">Lungo X (lunghezza)</option>
+          <option value="Y">Lungo Y (larghezza)</option>
+        </select>
+      </label>
+      <label>Numero campate
+        <input type="number" id="campate-numero" min="1" max="20" step="1" value="4">
+      </label>
+      <div class="info-box">
+        <div>Interasse: <span id="info-interasse">—</span> m</div>
+      </div>
 
-        <label class="switch">
-          <input id="interpiano" type="checkbox">
-          Interpiano
-        </label>
+      <h2>Copertura</h2>
+      <label>Tipo copertura
+        <select id="copertura-tipo">
+          <option value="AL">AL — Alari</option>
+          <option value="Y">Y</option>
+          <option value="TT">TT</option>
+        </select>
+      </label>
+      <label>Trave banchina
+        <select id="trave-banchina"></select>
+      </label>
+      <label>Trave trasversale
+        <select id="trave-trasversale"></select>
+      </label>
 
-        <label>
-          Altezza interpiano (m)
-          <input id="altezzaInterpiano" type="number" step=".1">
-        </label>
+      <h2>Pilastri</h2>
+      <label>Base pilastro (cm)
+        <input type="number" id="pilastro-base" min="20" max="100" step="5" value="40">
+      </label>
+      <label>Altezza sezione (cm)
+        <input type="number" id="pilastro-alt-sezione" min="20" max="150" step="5" value="40">
+      </label>
+      <label>Altezza pilastro (m)
+        <input type="number" id="pilastro-altezza" min="3" max="15" step="0.5" value="6">
+      </label>
+      <label class="check">
+        <input type="checkbox" id="pilastro-pluviale" checked> Pluviale
+      </label>
+      <label>Ø Pluviale (mm)
+        <select id="pilastro-pluviale-diametro">
+          <option value="80">80</option>
+          <option value="100" selected>100</option>
+          <option value="120">120</option>
+          <option value="160">160</option>
+        </select>
+      </label>
+      <label>Tipo fondazione
+        <select id="pilastro-fondazione"></select>
+      </label>
 
-        <label class="switch">
-          <input id="carroponte" type="checkbox">
-          Carroponte
-        </label>
+      <h2>Pannelli</h2>
+      <label>Finitura
+        <select id="pannello-finitura">
+          <option value="FV">Faccia vista</option>
+          <option value="GR">Granigliato</option>
+        </select>
+      </label>
+      <label>Colore graniglia 1
+        <input type="color" id="graniglia-colore-1" value="#d9d2c5">
+      </label>
+      <label>Colore graniglia 2
+        <input type="color" id="graniglia-colore-2" value="#b8b0a0">
+      </label>
+      <label>% graniglia 1
+        <input type="number" id="graniglia-perc-1" min="0" max="100" step="5" value="70">
+      </label>
 
-        <label>
-          Portata carroponte (t)
-          <input id="portataCarroponte" type="number" step=".5">
-        </label>
-      </section>
+      <h2>Extra</h2>
+      <label class="check">
+        <input type="checkbox" id="extra-interpiano"> Interpiano
+      </label>
+      <label class="check">
+        <input type="checkbox" id="extra-carroponte"> Carroponte
+      </label>
+      <label>Pendenza copertura (%)
+        <input type="number" id="pendenza-copertura" min="3" max="20" step="0.5" value="5">
+      </label>
 
-      <section>
-        <h3>CAMPA​TE</h3>
-        <div id="campateList"></div>
-
-        <div class="row">
-          <button id="addCampata">+ Aggiungi</button>
-          <button id="removeCampata">− Rimuovi</button>
-        </div>
-      </section>
-
-      <section>
-        <h3>COMPONENTI</h3>
-
-        <label>
-          Base pilastro (cm)
-          <input
-            id="pilastroBase"
-            type="number"
-            min="20"
-            max="100"
-            step="5"
-          >
-        </label>
-
-        <label>
-          Altezza sezione pilastro (cm)
-          <input
-            id="pilastroAltezzaSezione"
-            type="number"
-            min="20"
-            max="150"
-            step="5"
-          >
-        </label>
-
-        <label>
-          Trave
-          <select id="traveTipo"></select>
-        </label>
-
-        <label>
-          Tegolo
-          <select id="tegoloTipo"></select>
-        </label>
-      </section>
-
-      <section>
-        <h3>PANNELLI</h3>
-
-        <label>
-          Tipo
-          <select id="pannelloTipo">
-            <option value="V">V · Verticale</option>
-            <option value="O">O · Orizzontale</option>
-          </select>
-        </label>
-
-        <label>
-          Spessore
-          <select id="pannelloSpessore">
-            <option>20</option>
-            <option>24</option>
-            <option>28</option>
-          </select>
-        </label>
-
-        <label>
-          Finitura
-          <select id="pannelloFinitura">
-            <option value="FV">FV · Faccia vista</option>
-            <option value="GR">GR · Granigliato</option>
-          </select>
-        </label>
-      </section>
     </aside>
 
-    <main>
+    <!-- COLONNA CENTRALE -->
+    <section class="viewport">
       <nav class="tabs">
-        <button class="tab active" data-tab="3d">3D</button>
-        <button class="tab" data-tab="pianta">Pianta</button>
-        <button class="tab" data-tab="prospetti">Prospetti</button>
-        <button class="tab" data-tab="sezioni">Sezioni</button>
-        <button class="tab" data-tab="distinta">Distinta</button>
+        <button class="tab active" data-view="3d">3D</button>
+        <button class="tab" data-view="pianta">Pianta</button>
+        <button class="tab" data-view="prospetto">Prospetti</button>
+        <button class="tab" data-view="sezione">Sezioni</button>
+        <button class="tab" data-view="distinta">Distinta</button>
       </nav>
 
-      <section id="tab-3d" class="tabview active">
-        <div class="toolbar">
-          <button data-view="iso">Iso</button>
-          <button data-view="top">Top</button>
-          <button data-view="front">Front</button>
-          <button data-view="side">Lato</button>
-          <button id="wireBtn">Wire</button>
-        </div>
-        <div id="threeView"></div>
-      </section>
-
-      <section id="tab-pianta" class="tabview">
-        <div class="toolbar">
-          <button id="resetPianta">Reset vista</button>
-        </div>
-        <canvas id="piantaCanvas"></canvas>
-      </section>
-
-      <section id="tab-prospetti" class="tabview">
-        <div class="canvasGrid four">
-          <div>
-            <h4>Prospetto 1</h4>
-            <canvas id="prospetto1"></canvas>
-            <button class="resetCanvas" data-canvas="prospetto1">Reset</button>
-          </div>
-          <div>
-            <h4>Prospetto 2</h4>
-            <canvas id="prospetto2"></canvas>
-            <button class="resetCanvas" data-canvas="prospetto2">Reset</button>
-          </div>
-          <div>
-            <h4>Prospetto 3</h4>
-            <canvas id="prospetto3"></canvas>
-            <button class="resetCanvas" data-canvas="prospetto3">Reset</button>
-          </div>
-          <div>
-            <h4>Prospetto 4</h4>
-            <canvas id="prospetto4"></canvas>
-            <button class="resetCanvas" data-canvas="prospetto4">Reset</button>
+      <div class="view-container">
+        <div id="view-3d" class="view active">
+          <div class="view-actions">
+            <button class="btn" id="btn-iso">Iso</button>
+            <button class="btn" id="btn-top">Top</button>
+            <button class="btn" id="btn-front">Front</button>
+            <button class="btn" id="btn-lato">Lato</button>
+            <button class="btn" id="btn-wire">Wire</button>
           </div>
         </div>
-      </section>
 
-      <section id="tab-sezioni" class="tabview">
-        <div class="canvasGrid two">
-          <div>
-            <h4>Sezione A-A · longitudinale</h4>
-            <canvas id="sezioneAA"></canvas>
-            <button class="resetCanvas" data-canvas="sezioneAA">Reset</button>
+        <div id="view-pianta" class="view">
+          <div class="view-actions">
+            <button class="btn" id="btn-reset-pianta">Reset vista</button>
           </div>
-          <div>
-            <h4>Sezione B-B · trasversale</h4>
-            <canvas id="sezioneBB"></canvas>
-            <button class="resetCanvas" data-canvas="sezioneBB">Reset</button>
+          <canvas id="piantaCanvas"></canvas>
+        </div>
+
+        <div id="view-prospetto" class="view view-prospetti">
+          <div class="prospetti-grid">
+            <div class="prospetto-box">
+              <div class="prospetto-actions"><button class="btn resetCanvas" data-canvas="prospetto1">Reset</button></div>
+              <canvas id="prospetto1"></canvas>
+            </div>
+            <div class="prospetto-box">
+              <div class="prospetto-actions"><button class="btn resetCanvas" data-canvas="prospetto2">Reset</button></div>
+              <canvas id="prospetto2"></canvas>
+            </div>
+            <div class="prospetto-box">
+              <div class="prospetto-actions"><button class="btn resetCanvas" data-canvas="prospetto3">Reset</button></div>
+              <canvas id="prospetto3"></canvas>
+            </div>
+            <div class="prospetto-box">
+              <div class="prospetto-actions"><button class="btn resetCanvas" data-canvas="prospetto4">Reset</button></div>
+              <canvas id="prospetto4"></canvas>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section id="tab-distinta" class="tabview">
-        <div class="toolbar">
-          <button id="csvBtn">Esporta CSV</button>
-          <button id="dxfPiantaBtn">DXF Pianta</button>
-          <button id="dxfProspettiBtn">DXF Prospetti</button>
-          <button id="dxfSezioniBtn">DXF Sezioni</button>
-          <button id="jsonBtn">JSON Progetto</button>
+        <div id="view-sezione" class="view view-sezioni">
+          <div class="sezioni-grid">
+            <div class="sezione-box">
+              <div class="sezione-actions"><button class="btn resetCanvas" data-canvas="sezioneAA">Reset</button></div>
+              <canvas id="sezioneAA"></canvas>
+            </div>
+            <div class="sezione-box">
+              <div class="sezione-actions"><button class="btn resetCanvas" data-canvas="sezioneBB">Reset</button></div>
+              <canvas id="sezioneBB"></canvas>
+            </div>
+          </div>
         </div>
 
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Famiglia</th>
-                <th>Elemento</th>
-                <th>Tipo</th>
-                <th>Qtà</th>
-                <th>Dimensioni</th>
-                <th>Volume (m³)</th>
-                <th>Peso (t)</th>
-                <th>Prezzo (€)</th>
-              </tr>
-            </thead>
-            <tbody id="distintaBody"></tbody>
-          </table>
+        <div id="view-distinta" class="view view-distinta">
+          <div class="distinta-toolbar">
+            <button class="btn" id="btn-export-csv">Esporta CSV</button>
+            <button class="btn" id="btn-export-dxf-pianta">DXF Pianta</button>
+            <button class="btn" id="btn-export-dxf-prospetti">DXF Prospetti</button>
+            <button class="btn" id="btn-export-dxf-sezioni">DXF Sezioni</button>
+            <button class="btn" id="btn-export-json">JSON Progetto</button>
+          </div>
+          <div class="distinta-scroll">
+            <table id="tabella-distinta">
+              <thead>
+                <tr>
+                  <th>Famiglia</th><th>Elemento</th><th>Tipo</th><th>Qtà</th>
+                  <th>Dimensioni</th><th>Volume (m³)</th><th>Peso (t)</th><th>Prezzo (€)</th>
+                </tr>
+              </thead>
+              <tbody id="distintaBody"></tbody>
+            </table>
+          </div>
         </div>
-      </section>
-    </main>
-
-    <aside class="right">
-      <h3>RISULTATI</h3>
-
-      <div class="stat">
-        Lunghezza tot.
-        <b id="rLunghezza">0.00 m</b>
       </div>
+    </section>
 
-      <div class="stat">
-        Superficie coperta
-        <b id="rSuperficie">0.00 m²</b>
-      </div>
-
-      <div class="stat">
-        Volume calcestruzzo
-        <b id="rVolume">0.00 m³</b>
-      </div>
-
-      <div class="stat">
-        Peso totale
-        <b id="rPeso">0.00 t</b>
-      </div>
-
-      <div class="stat">
-        Numero pilastri
-        <b id="rPilastri">0</b>
-      </div>
-
+    <!-- COLONNA DESTRA -->
+    <aside class="panel panel-right">
+      <h2>Risultati</h2>
+      <div class="stat"><span class="stat-label">Lunghezza tot.</span><span class="stat-value" id="rLunghezza">—</span></div>
+      <div class="stat"><span class="stat-label">Superficie coperta</span><span class="stat-value" id="rSuperficie">—</span></div>
+      <div class="stat"><span class="stat-label">Volume calcestruzzo</span><span class="stat-value" id="rVolume">—</span></div>
+      <div class="stat"><span class="stat-label">Peso totale</span><span class="stat-value" id="rPeso">—</span></div>
+      <div class="stat"><span class="stat-label">Numero pilastri</span><span class="stat-value" id="rPilastri">—</span></div>
       <div class="status" id="status">Pronto</div>
     </aside>
-  </div>
 
-  <footer>
-    CACEM · configuratore statico
-    <span>v3.0 · online</span>
+  </main>
+
+  <footer class="footer">
+    <span>CACEM · v6.0</span>
+    <span id="footer-status">Pronto</span>
   </footer>
 
-  <script>
-    (function () {
-      const panel = document.getElementById("errorPanel");
-      const list = document.getElementById("errorList");
+</div>
 
-      function showError(msg) {
-        panel.style.display = "block";
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/dxf-writer@1.18.4/dist/dxf-writer.min.js"></script>
+<script type="module" src="main.js"></script>
 
-        const div = document.createElement("div");
-        div.style.marginBottom = "4px";
-        div.textContent = "❌ " + msg;
-        list.appendChild(div);
-      }
-
-      window.addEventListener("error", function (e) {
-        showError(
-          (e.filename || "?") +
-          ":" +
-          (e.lineno || "?") +
-          " — " +
-          (e.message || "errore sconosciuto")
-        );
-      });
-
-      window.addEventListener("unhandledrejection", function (e) {
-        showError(
-          "Promise rifiutata: " +
-          (e.reason?.message || e.reason || "?")
-        );
-      });
-
-      window.__showError = showError;
-    })();
-  </script>
-
-  <script type="module" src="main.js"></script>
 </body>
 </html>
