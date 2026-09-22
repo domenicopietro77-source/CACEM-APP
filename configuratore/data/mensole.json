@@ -1,10 +1,1 @@
-{
-  "descrizione":"Catalogo mensole",
-  "mensole":[
-    {"id":"MS","nome":"Mensola solaio","sporgenza":20,"altezza":30,"tipo":"solaio"},
-    {"id":"MT","nome":"Mensola trave","sporgenza":30,"altezza":40,"tipo":"trave"},
-    {"id":"MC5","nome":"Mensola carroponte 5t","sporgenza":40,"altezza":50,"tipo":"carroponte","carico":5},
-    {"id":"MC10","nome":"Mensola carroponte 10t","sporgenza":50,"altezza":60,"tipo":"carroponte","carico":10},
-    {"id":"MC20","nome":"Mensola carroponte 20t","sporgenza":60,"altezza":70,"tipo":"carroponte","carico":20}
-  ]
-}
+{"descrizione":"Catalogo mensole","mensole":[{"id":"MS","nome":"Mensola solaio","sporgenza":20,"altezza":30,"tipo":"solaio"},{"id":"MT","nome":"Mensola trave","sporgenza":30,"altezza":40,"tipo":"trave"},{"id":"MC5","nome":"Mensola carroponte 5t","sporgenza":40,"altezza":50,"tipo":"carroponte","carico":5},{"id":"MC10","nome":"Mensola carroponte 10t","sporgenza":50,"altezza":60,"tipo":"carroponte","carico":10},{"id":"MC20","nome":"Mensola carroponte 20t","sporgenza":60,"altezza":70,"tipo":"carroponte","carico":20}]}
