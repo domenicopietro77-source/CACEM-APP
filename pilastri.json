@@ -1,1 +1,74 @@
-[{"id":"P30x30","nome":"P30×30","sezione":{"l":30,"h":30},"altezzeStd":[6,7,8,9,10],"pluvialeDiametro":10,"fondazione":"bicchiere","pesoLineare":0.23},{"id":"P40x40","nome":"P40×40","sezione":{"l":40,"h":40},"altezzeStd":[6,7,8,9,10,12],"pluvialeDiametro":12,"fondazione":"bicchiere","pesoLineare":0.40},{"id":"P40x60","nome":"P40×60","sezione":{"l":40,"h":60},"altezzeStd":[8,10,12],"pluvialeDiametro":14,"fondazione":"bicchiere","pesoLineare":0.60},{"id":"P50x50","nome":"P50×50","sezione":{"l":50,"h":50},"altezzeStd":[8,10,12],"pluvialeDiametro":14,"fondazione":"bicchiere","pesoLineare":0.63},{"id":"P50x70","nome":"P50×70","sezione":{"l":50,"h":70},"altezzeStd":[8,10,12,14],"pluvialeDiametro":16,"fondazione":"armatubo","pesoLineare":0.88}]
+[
+  {
+    "id": "P30x30",
+    "nome": "Pilastro 30×30",
+    "sezione": { "l": 30, "h": 30 },
+    "altezzeStd": [4, 5, 6, 7, 8],
+    "pluvialeDiametro": 80,
+    "fondazioneDefault": "bicchiere",
+    "fondazioniAmmesse": ["bicchiere", "armatubo"],
+    "pesoLineare": 0.225,
+    "categoria": "leggero",
+    "note": "Per carichi leggeri, no carroponte"
+  },
+  {
+    "id": "P40x40",
+    "nome": "Pilastro 40×40",
+    "sezione": { "l": 40, "h": 40 },
+    "altezzeStd": [4, 5, 6, 7, 8, 9, 10],
+    "pluvialeDiametro": 100,
+    "fondazioneDefault": "bicchiere",
+    "fondazioniAmmesse": ["bicchiere", "armatubo"],
+    "pesoLineare": 0.400,
+    "categoria": "standard",
+    "note": "Standard per capannoni industriali medi"
+  },
+  {
+    "id": "P40x60",
+    "nome": "Pilastro 40×60",
+    "sezione": { "l": 40, "h": 60 },
+    "altezzeStd": [6, 7, 8, 9, 10, 11, 12],
+    "pluvialeDiametro": 100,
+    "fondazioneDefault": "bicchiere",
+    "fondazioniAmmesse": ["bicchiere", "armatubo"],
+    "pesoLineare": 0.600,
+    "categoria": "medio",
+    "note": "Per campate oltre 25 m o carroponte leggero"
+  },
+  {
+    "id": "P50x50",
+    "nome": "Pilastro 50×50",
+    "sezione": { "l": 50, "h": 50 },
+    "altezzeStd": [6, 7, 8, 9, 10, 11, 12],
+    "pluvialeDiametro": 100,
+    "fondazioneDefault": "bicchiere",
+    "fondazioniAmmesse": ["bicchiere", "armatubo"],
+    "pesoLineare": 0.625,
+    "categoria": "medio",
+    "note": "Per carichi elevati"
+  },
+  {
+    "id": "P50x70",
+    "nome": "Pilastro 50×70",
+    "sezione": { "l": 50, "h": 70 },
+    "altezzeStd": [7, 8, 9, 10, 11, 12],
+    "pluvialeDiametro": 120,
+    "fondazioneDefault": "armatubo",
+    "fondazioniAmmesse": ["bicchiere", "armatubo"],
+    "pesoLineare": 0.875,
+    "categoria": "pesante",
+    "note": "Per carroponte pesante (fino a 20t)"
+  },
+  {
+    "id": "P60x60",
+    "nome": "Pilastro 60×60",
+    "sezione": { "l": 60, "h": 60 },
+    "altezzeStd": [8, 9, 10, 11, 12],
+    "pluvialeDiametro": 120,
+    "fondazioneDefault": "armatubo",
+    "fondazioniAmmesse": ["armatubo"],
+    "pesoLineare": 0.900,
+    "categoria": "pesante",
+    "note": "Per carroponte pesante (fino a 30t)"
+  }
+]

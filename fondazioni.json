@@ -1,0 +1,56 @@
+{
+  "descrizione": "Sistemi di fondazione per pilastri prefabbricati",
+  "tipi": [
+    {
+      "id": "bicchiere_pluviale",
+      "nome": "Bicchiere con pluviale",
+      "tipo": "bicchiere",
+      "pluviale": true,
+      "sboccoPluviale": true,
+      "dimensioni": { "baseDefault": 90, "altezzaDefault": 80, "pluvialeDiametroDefault": 100 },
+      "note": "Bicchiere con foro per scarico pluviale laterale",
+      "operaCommittente": ["Trave portapannelli", "Sbocco pluviale"]
+    },
+    {
+      "id": "bicchiere_senza_pluviale",
+      "nome": "Bicchiere senza pluviale",
+      "tipo": "bicchiere",
+      "pluviale": false,
+      "sboccoPluviale": false,
+      "dimensioni": { "baseDefault": 90, "altezzaDefault": 80 },
+      "note": "Bicchiere standard senza scarico pluviale",
+      "operaCommittente": ["Trave portapannelli"]
+    },
+    {
+      "id": "bicchiere_centrale",
+      "nome": "Bicchiere centrale",
+      "tipo": "bicchiere",
+      "pluviale": false,
+      "sboccoPluviale": false,
+      "dimensioni": { "baseDefault": 90, "altezzaDefault": 80 },
+      "note": "Per pilastri non perimetrali (interni)",
+      "operaCommittente": []
+    },
+    {
+      "id": "armatubo",
+      "nome": "Armatubo",
+      "tipo": "armatubo",
+      "pluviale": false,
+      "sboccoPluviale": false,
+      "dimensioni": { "baseDefault": 80, "altezzaDefault": 120, "tuboDiametroDefault": 60 },
+      "note": "Fondazione a tubo in cemento armato, armatura a gabbia visibile",
+      "operaCommittente": []
+    }
+  ],
+  "pluviali": {
+    "diametriStd": [80, 100, 120, 140, 160],
+    "materiali": ["PVC", "PE", "ghisa"],
+    "note": "Sbocco laterale o a pavimento"
+  },
+  "opereCommittente": [
+    { "id": "trave_portapannelli", "nome": "Trave portapannelli", "nota": "A cura e onere del committente" },
+    { "id": "sbocco_pluviale", "nome": "Sbocco pluviale", "nota": "A cura e onere del committente" },
+    { "id": "soletta_collaborante", "nome": "Soletta in opera a c.a.", "nota": "A cura e onere del committente" },
+    { "id": "pavimento", "nome": "Pavimento in opera a cura", "nota": "A cura e onere del committente" }
+  ]
+}
