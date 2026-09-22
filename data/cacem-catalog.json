@@ -1,0 +1,83 @@
+{
+  "source": "ESECUTIVO_DA ANALIZZARE TEGOLI TT TRAVI TL E PILASTRI.dxf",
+  "sourceRole": "authoritative geometry/technical reference",
+  "method": "schede_di_produzione + disegni_generali",
+  "families": {
+    "pilastri": {
+      "types": [
+        "PP1",
+        "PP2",
+        "PP4",
+        "PP5",
+        "PP6",
+        "PP7",
+        "PP8",
+        "PP9",
+        "PP10"
+      ],
+      "sourceStatus": "identified in production sheets"
+    },
+    "travi_TL": {
+      "types": [
+        "TL1",
+        "TL2",
+        "TL3",
+        "TL4",
+        "TL5",
+        "TL6",
+        "TL7"
+      ],
+      "sourceStatus": "identified in production sheets"
+    },
+    "solai_TT": {
+      "types": [
+        "TT01",
+        "TT02",
+        "TT03"
+      ],
+      "sourceStatus": "identified in production sheets"
+    },
+    "travi_TD": {
+      "types": [
+        "TD1"
+      ],
+      "sourceStatus": "identified; geometry to be correlated"
+    },
+    "accessori": {
+      "types": [
+        "PANNELLI",
+        "PORTE_E_FINESTRE",
+        "BICCHIERE",
+        "ANCORAGGI",
+        "HALFEN",
+        "MENSOLE_TRAVI",
+        "PLUVIALI",
+        "INSERTI",
+        "MASSETTO"
+      ]
+    }
+  },
+  "productionData": {
+    "concrete": {
+      "class": "C45/55",
+      "exposure": "XC3"
+    },
+    "rebar": "B450C",
+    "steelProfiles": "S235",
+    "cover_cm": 3,
+    "lifting": {
+      "holes": "Ø80",
+      "anchors": "2 ANCORANTI A RISALTO P=7.5 ton"
+    },
+    "halfens": [
+      "25",
+      "25/50"
+    ]
+  },
+  "notes": [
+    "PP3 is not identified in the supplied executive drawing and must not be invented.",
+    "TL6 includes HALFEN 25/50 and pluvial references in the production-sheet text.",
+    "The building contains an existing portion and an AMPLIAMENTO; the model must preserve this distinction.",
+    "A BLOCCO UFFICI is present in the drawing and must remain a semantic project object."
+  ]
+}
