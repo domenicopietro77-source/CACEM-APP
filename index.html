@@ -1,1 +1,74 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0; url=configuratore.html"><title>CACEM Configuratore</title></head><body>APERTURA CACEM CONFIGURATORE…<script>location.replace("configuratore.html")</script></body></html>
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CACEM · Configuratore Capannoni</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Arial,sans-serif;background:#101318;color:#e8edf2;overflow:hidden}
+header{height:52px;background:#1b2027;border-bottom:1px solid #343b45;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.logo{font-size:21px;font-weight:700;letter-spacing:.5px}.sub{font-size:10px;color:#8f9aa8;margin-left:10px}.badge{font-size:10px;border:1px solid #46505d;padding:5px 9px;border-radius:12px}
+.layout{display:grid;grid-template-columns:270px 1fr;height:calc(100% - 52px)}
+aside{background:#171b21;border-right:1px solid #343b45;padding:14px;overflow:auto}
+aside h3{font-size:11px;letter-spacing:1px;color:#9da8b5;margin:4px 0 18px}
+label{display:block;font-size:11px;color:#cbd3dc;margin:13px 0}label span{float:right;color:#fff}
+input[type=range]{width:100%;margin-top:7px}input[type=text],select{width:100%;margin-top:7px;background:#242a32;color:#fff;border:1px solid #46505d;border-radius:4px;padding:7px}
+.check{display:flex;gap:8px;align-items:center}.check input{margin:0}.info{border-top:1px solid #303742;margin-top:18px;padding-top:12px;font-size:10px;line-height:1.5;color:#7f8a98}
+main{min-width:0;min-height:0}.tabs{height:43px;display:flex;background:#1b2027;border-bottom:1px solid #343b45;overflow:auto}
+.tab{border:0;background:none;color:#929dab;padding:0 15px;font-size:11px;cursor:pointer;white-space:nowrap}.tab.active{background:#252c35;color:#fff;border-bottom:2px solid #c2ccd7}
+.view{display:none;height:calc(100% - 43px);position:relative;background:#14171c}.view.active{display:block}
+canvas{width:100%;height:100%;display:block}.toolbar{padding:8px;display:flex;gap:7px;flex-wrap:wrap;background:#1b2027;border-bottom:1px solid #343b45}
+button.action{background:#252c35;color:#e8edf2;border:1px solid #46505d;border-radius:4px;padding:7px 10px;font-size:10px;cursor:pointer}
+.grid4{height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:7px;padding:7px}.grid4 canvas,.secbox{background:#101318;border:1px solid #343b45}
+.sections{height:100%;display:grid;grid-template-rows:1fr 1fr;gap:7px;padding:7px}.secbox canvas{height:100%}
+.summary{display:flex;gap:8px;padding:8px}.card{background:#1c222a;border:1px solid #343b45;border-radius:5px;padding:7px 13px;font-size:10px;color:#909aa7}.card b{display:block;color:#fff;font-size:14px;margin-top:3px}
+.tablewrap{height:calc(100% - 105px);overflow:auto;padding:0 8px}.table{width:100%;border-collapse:collapse;font-size:10px}.table th{position:sticky;top:0;background:#252c35}.table th,.table td{padding:8px;border-bottom:1px solid #303742;text-align:left}
+</style></head>
+<body>
+<header><div><span class="logo">CACEM</span><span class="sub">CONFIGURATORE CAPANNONI · MODELLO PARAMETRICO</span></div><span class="badge">VERSIONE ONLINE</span></header>
+<div class="layout">
+<aside><h3>PARAMETRI STRUTTURALI</h3>
+<label>Lunghezza <span id="vl">30.00 m</span><input id="L" type="range" min="10" max="80" step=".5" value="30"></label>
+<label>Larghezza <span id="vw">20.00 m</span><input id="W" type="range" min="8" max="40" step=".5" value="20"></label>
+<label>Altezza gronda <span id="vh">8.00 m</span><input id="H" type="range" min="4" max="14" step=".25" value="8"></label>
+<label>Salita copertura <span id="vs">2.00 m</span><input id="S" type="range" min="0" max="6" step=".25" value="2"></label>
+<label>Campate <input id="campate" type="text" value="6,6,6,6,6"><small id="campInfo"></small></label>
+<label>Pilastro<select id="pil"><option>PP2</option></select></label>
+<label>Trave longitudinale<select id="trl"><option>TL</option></select></label>
+<label>Tegolo<select id="teg"><option>TEG60</option></select></label>
+<label class="check"><input id="pan" type="checkbox" checked> Tamponamenti</label>
+<label class="check"><input id="floor" type="checkbox"> Interpiano</label>
+<div class="info">La geometria di questa versione è parametrica e tutte le viste derivano dagli stessi parametri. I cataloghi reali CACEM potranno sostituire i valori dimostrativi.</div>
+</aside>
+<main>
+<nav class="tabs">
+<button class="tab active" data-v="v3d">3D</button><button class="tab" data-v="vp">PIANTA</button><button class="tab" data-v="ve">PROSPETTI</button><button class="tab" data-v="vsct">SEZIONI A-A / B-B</button><button class="tab" data-v="vd">DISTINTA / EXPORT</button>
+</nav>
+<section id="v3d" class="view active"><canvas id="c3d"></canvas></section>
+<section id="vp" class="view"><div class="toolbar"><button class="action" id="reset">RESET VISTA</button></div><canvas id="cp"></canvas></section>
+<section id="ve" class="view"><div class="grid4"><canvas id="e1"></canvas><canvas id="e2"></canvas><canvas id="e3"></canvas><canvas id="e4"></canvas></div></section>
+<section id="vsct" class="view"><div class="sections"><div class="secbox"><canvas id="aa"></canvas></div><div class="secbox"><canvas id="bb"></canvas></div></div></section>
+<section id="vd" class="view"><div class="toolbar"><button class="action" id="csv">ESPORTA CSV</button><button class="action" id="json">ESPORTA JSON</button><button class="action" id="dxfp">DXF PIANTA</button><button class="action" id="dxff">DXF PROSPETTI</button><button class="action" id="dxfs">DXF SEZIONI</button></div>
+<div class="summary"><div class="card">VOLUME <b id="tv">0 m³</b></div><div class="card">PESO STIMATO <b id="tw">0 t</b></div><div class="card">COSTO STIMATO <b id="tc">€ 0</b></div></div>
+<div class="tablewrap"><table class="table"><thead><tr><th>Famiglia</th><th>Elemento</th><th>Qtà</th><th>Dimensioni</th><th>Volume m³</th><th>Peso t</th><th>Costo €</th></tr></thead><tbody id="tbody"></tbody></table></div></section>
+</main></div>
+<script>
+const $=id=>document.getElementById(id), C={pil:{x:.4,z:.4},tl:{b:.4,h:.6},teg:{u:2.5,t:.12},pan:{t:.2},fond:{x:.9,z:.9,h:.8},men:{x:.3,z:.3,h:.35},price:{Pilastri:320,Travi:380,Copertura:400,Pannelli:350,Fondazioni:280,Mensole:380,Solai:300}};
+let viewZoom=1;
+function state(){let cs=$('campate').value.split(/[,; ]+/).filter(Boolean).map(Number);if(!cs.length)cs=[6];return{L:+$('L').value,W:+$('W').value,H:+$('H').value,S:+$('S').value,campate:cs,pan:$('pan').checked,floor:$('floor').checked}}
+function model(){let s=state(),axes=[0];s.campate.forEach(x=>axes.push(axes.at(-1)+x));let cols=[];axes.forEach((x,i)=>{cols.push({x,z:0});cols.push({x,z:s.W})});return{...s,axes,cols,n:s.campate.length,roof:s.H+s.S}}
+function setup(c){let x=$(c),ctx=x.getContext('2d');function r(){x.width=x.clientWidth*devicePixelRatio;x.height=x.clientHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);draw()}new ResizeObserver(r).observe(x);return ctx}
+const ctxs={c3d:setup('c3d'),p:setup('cp'),e:[setup('e1'),setup('e2'),setup('e3'),setup('e4')],aa:setup('aa'),bb:setup('bb')};
+function line(c,a,b,d,e,w=1){c.strokeStyle='#aeb8c5';c.lineWidth=w;c.beginPath();c.moveTo(a,b);c.lineTo(d,e);c.stroke()}
+function txt(c,t,x,y,z=11){c.fillStyle='#dfe6ee';c.font=z+'px Arial';c.fillText(t,x,y)}
+function clr(c){c.clearRect(0,0,c.canvas.clientWidth,c.canvas.clientHeight)}
+function plan(g,c){clr(c);let w=c.canvas.clientWidth,h=c.canvas.clientHeight,sc=Math.min((w-90)/g.L,(h-90)/g.W),ox=(w-g.L*sc)/2,oy=(h-g.W*sc)/2;c.strokeStyle='#718092';c.strokeRect(ox,oy,g.L*sc,g.W*sc);g.axes.forEach((x,i)=>{line(c,ox+x*sc,oy-12,ox+x*sc,oy+g.W*sc+12);txt(c,i+1,ox+x*sc-3,oy-18,10)});g.cols.forEach((p,i)=>{c.fillStyle='#c5a15e';c.fillRect(ox+p.x*sc-.2*sc,oy+p.z*sc-.2*sc,.4*sc,.4*sc);txt(c,'P'+(i+1),ox+p.x*sc+4,oy+p.z*sc-5,8)});g.campate.forEach((_,i)=>line(c,ox+g.axes[i]*sc,oy,ox+g.axes[i]*sc,oy+g.W*sc,2));txt(c,'PIANTA — '+g.L.toFixed(2)+' × '+g.W.toFixed(2)+' m',12,22,14)}
+function elev(g,c,k){clr(c);let w=c.canvas.clientWidth,h=c.canvas.clientHeight,max=k<2?g.L:g.W,sc=Math.min((w-70)/max,(h-65)/(g.roof+1)),ox=35,base=h-30;line(c,ox,base,ox+max*sc,base,2);if(k<2){line(c,ox,base-g.H*sc,ox+max*sc,base-g.H*sc,3);g.axes.forEach(x=>line(c,ox+x*sc,base,ox+x*sc,base-g.H*sc,3))}else{line(c,ox,base-g.H*sc,ox+max*sc/2,base-g.roof*sc,3);line(c,ox+max*sc/2,base-g.roof*sc,ox+max*sc,base-g.H*sc,3);line(c,ox,base,ox,base-g.H*sc,3);line(c,ox+max*sc,base,ox+max*sc,base-g.H*sc,3)}txt(c,['PROSPETTO 1','PROSPETTO 2','PROSPETTO 3','PROSPETTO 4'][k],12,20,13)}
+function sections(g,a,b){clr(a);let w=a.canvas.clientWidth,h=a.canvas.clientHeight,sc=Math.min((w-70)/g.L,(h-60)/(g.H+1)),ox=35,base=h-25;line(a,ox,base-g.H*sc,ox+g.L*sc,base-g.H*sc,3);g.axes.forEach(x=>line(a,ox+x*sc,base,ox+x*sc,base-g.H*sc,3));txt(a,'SEZIONE A-A — LONGITUDINALE',12,20,13);clr(b);w=b.canvas.clientWidth;h=b.canvas.clientHeight;sc=Math.min((w-100)/g.W,(h-65)/(g.roof+1));let cx=w/2,by=h-25;line(b,cx-g.W*sc/2,by,cx-g.W*sc/2,by-g.H*sc,3);line(b,cx+g.W*sc/2,by,cx+g.W*sc/2,by-g.H*sc,3);line(b,cx-g.W*sc/2,by-g.H*sc,cx,by-g.roof*sc,3);line(b,cx,by-g.roof*sc,cx+g.W*sc/2,by-g.H*sc,3);txt(b,'SEZIONE B-B — TRASVERSALE',12,20,13)}
+function scene(g,c){clr(c);let w=c.canvas.clientWidth,h=c.canvas.clientHeight,sc=Math.min((w-100)/g.L,(h-130)/(g.H+g.W*.45)),ox=w/2,by=h-45,iso=(x,z,y)=>({x:ox+(x-z)*sc*.72,y:by-y*sc-(x+z)*sc*.27});let p=[[0,0],[g.L,0],[g.L,g.W],[0,g.W]].map(q=>iso(q[0],q[1],0));c.strokeStyle='#aeb8c5';c.beginPath();c.moveTo(p[0].x,p[0].y);p.slice(1).forEach(q=>c.lineTo(q.x,q.y));c.closePath();c.stroke();g.cols.forEach(q=>{let a=iso(q.x,q.z,0),b=iso(q.x,q.z,g.H);line(c,a.x,a.y,b.x,b.y,3)});for(let i=0;i<g.n;i++){let x=g.axes[i],p1=iso(x,0,g.H),p2=iso(x,g.W/2,g.roof),p3=iso(x,g.W,g.H);line(c,p1.x,p1.y,p2.x,p2.y,2);line(c,p2.x,p2.y,p3.x,p3.y,2)}txt(c,'MODELLO 3D',15,22,14);txt(c,g.L+' × '+g.W+' × '+g.H+' m',15,42)}
+function bom(g){let r=[],add=(f,e,q,d,v)=>r.push([f,e,q,d,v,v*2.5,v*(C.price[f]||0)]);let qp=2*(g.n+1);add('Pilastri','PP2',qp,'.40×.40×'+g.H,(.4*.4*g.H*qp));add('Travi','TL',2,g.L+' × .40 × .60',2*g.L*.4*.6);add('Travi','TT',g.n,g.W+' × .35 × .55',g.n*g.W*.35*.55);add('Mensole','MSTD',qp,'.30×.30×.35',qp*.3*.3*.35);add('Fondazioni','FPP2',qp,'.90×.90×.80',qp*.9*.9*.8);let sl=Math.hypot(g.W/2,g.S),qt=Math.ceil(g.L/2.5)*2;add('Copertura','TEG60',qt,'2.50 × '+sl.toFixed(2),qt*2.5*.12*sl);if(g.pan)add('Pannelli','P20',(2*(g.L+g.W)).toFixed(2),'perimetro × '+g.H+' × .20',2*(g.L+g.W)*g.H*.2);if(g.floor)add('Solai','INTERPIANO',1,g.L+' × '+g.W+' × .25',g.L*g.W*.25);return r}
+function renderBom(g){let r=bom(g),b=$('tbody');b.innerHTML='';let tv=0,tw=0,tc=0;r.forEach(x=>{tv+=x[4];tw+=x[5];tc+=x[6];let tr=document.createElement('tr');tr.innerHTML='<td>'+x[0]+'</td><td>'+x[1]+'</td><td>'+x[2]+'</td><td>'+x[3]+'</td><td>'+x[4].toFixed(2)+'</td><td>'+x[5].toFixed(2)+'</td><td>€ '+x[6].toFixed(2)+'</td>';b.appendChild(tr)});$('tv').textContent=tv.toFixed(2)+' m³';$('tw').textContent=tw.toFixed(2)+' t';$('tc').textContent='€ '+tc.toFixed(2)}
+function download(data,name,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+function dxfLines(g,mode){let a=['0','SECTION','2','ENTITIES'];function ln(x1,y1,x2,y2){a.push('0','LINE','8','CACEM','10',x1,'20',y1,'11',x2,'21',y2)}if(mode==='p'){ln(0,0,g.L,0);ln(g.L,0,g.L,g.W);ln(g.L,g.W,0,g.W);ln(0,g.W,0,0);g.axes.forEach(x=>ln(x,0,x,g.W))}else if(mode==='s'){ln(0,0,g.L,0);ln(0,g.H,g.L,g.H);g.axes.forEach(x=>ln(x,0,x,g.H))}else{for(let k=0;k<4;k++){let off=k*(g.H+15),m=k<2?g.L:g.W;ln(0,off,m,off);ln(0,off,m,off+g.H);if(k>=2){ln(0,off+g.H,m/2,off+g.roof);ln(m/2,off+g.roof,m,off+g.H)}}}a.push('0','ENDSEC','0','EOF');return a.join('\n')}
+function draw(){let g=model();$('vl').textContent=g.L.toFixed(2)+' m';$('vw').textContent=g.W.toFixed(2)+' m';$('vh').textContent=g.H.toFixed(2)+' m';$('vs').textContent=g.S.toFixed(2)+' m';$('campInfo').textContent=g.n+' campate — '+g.L.toFixed(2)+' m';scene(g,ctxs.c3d);plan(g,ctxs.p);ctxs.e.forEach((c,i)=>elev(g,c,i));sections(g,ctxs.aa,ctxs.bb);renderBom(g)}
+['L','W','H','S','campate','pan','floor'].forEach(id=>$(id).addEventListener('input',draw));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.v).classList.add('active');draw()});$('reset').onclick=()=>{viewZoom=1;draw()};$('json').onclick=()=>download(JSON.stringify({progetto:'CACEM',versione:'online',stato:model(),distinta:bom(model())},null,2),'CACEM_progetto.json','application/json');$('csv').onclick=()=>{let r=bom(model()),s='Famiglia;Elemento;Quantità;Dimensioni;Volume m3;Peso t;Costo EUR\n'+r.map(x=>x.join(';')).join('\n');download(s,'CACEM_distinta.csv','text/csv')};$('dxfp').onclick=()=>download(dxfLines(model(),'p'),'CACEM_pianta.dxf','application/dxf');$('dxff').onclick=()=>download(dxfLines(model(),'f'),'CACEM_prospetti.dxf','application/dxf');$('dxfs').onclick=()=>download(dxfLines(model(),'s'),'CACEM_sezioni.dxf','application/dxf');draw();
+</script></body></html>
