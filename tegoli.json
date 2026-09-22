@@ -1,0 +1,47 @@
+[
+  {
+    "id": "AL",
+    "nome": "Tegolo AL (Alare)",
+    "sigla": "AL",
+    "tipo": "alare",
+    "larghezza": 250,
+    "altezza": 12,
+    "luceMax": 14,
+    "pesoLineare": 0.30,
+    "categoria": "copertura",
+    "utilizzo": "Tegolo di copertura con appoggio su trave a L",
+    "descrizione": "Sezione a U con ali laterali, appoggio su trave di banchina",
+    "materiale": "calcestruzzo precompresso",
+    "finitura": "faccia vista inferiore"
+  },
+  {
+    "id": "Y",
+    "nome": "Tegolo Y",
+    "sigla": "Y",
+    "tipo": "Y",
+    "larghezza": 300,
+    "altezza": 15,
+    "luceMax": 16,
+    "pesoLineare": 0.36,
+    "categoria": "copertura",
+    "utilizzo": "Tegolo di copertura con nervature a Y",
+    "descrizione": "Sezione a Y con nervature, per luci elevate",
+    "materiale": "calcestruzzo precompresso",
+    "finitura": "faccia vista inferiore"
+  },
+  {
+    "id": "TY",
+    "nome": "Tegolo TY",
+    "sigla": "TY",
+    "tipo": "TY",
+    "larghezza": 300,
+    "altezza": 15,
+    "luceMax": 16,
+    "pesoLineare": 0.36,
+    "categoria": "copertura",
+    "utilizzo": "Tegolo di copertura tipo TY",
+    "descrizione": "Sezione a T con nervature Y",
+    "materiale": "calcestruzzo precompresso",
+    "finitura": "faccia vista inferiore"
+  }
+]
