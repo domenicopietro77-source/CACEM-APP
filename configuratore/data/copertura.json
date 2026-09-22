@@ -1,0 +1,7 @@
+{
+  "descrizione":"Catalogo tegoli di copertura",
+  "tegoli":[
+    {"id":"AL","nome":"Tegolo AL (alare)","larghezza":120,"altezza":25,"luceMax":20,"pesoLineare":0.30},
+    {"id":"TY","nome":"Tegolo TY","larghezza":120,"altezza":30,"luceMax":25,"pesoLineare":0.36}
+  ]
+}
