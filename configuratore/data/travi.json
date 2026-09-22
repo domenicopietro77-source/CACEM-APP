@@ -1,0 +1,13 @@
+{
+  "descrizione":"Catalogo travi prefabbricate — valori plausibili da raffinare",
+  "travi":[
+    {"id":"TL","nome":"Trave a L (TL)","tipo":"L","base":40,"altezza":60,"luceMax":12,"pesoLineare":0.48},
+    {"id":"TD","nome":"Trave a doppia T (TD)","tipo":"doppiaT","base":40,"altezza":80,"luceMax":15,"pesoLineare":0.64},
+    {"id":"TDR","nome":"Trave a T rovescia (TDR)","tipo":"Trovescia","base":40,"altezza":80,"luceMax":15,"pesoLineare":0.64},
+    {"id":"TLR","nome":"Trave a L rovescia (TLR)","tipo":"Lrovescia","base":40,"altezza":60,"luceMax":12,"pesoLineare":0.48},
+    {"id":"R","nome":"Trave rettangolare (R)","tipo":"rettangolare","base":40,"altezza":60,"luceMax":10,"pesoLineare":0.48},
+    {"id":"TU","nome":"Trave a canale (TU)","tipo":"canale","base":40,"altezza":60,"luceMax":10,"pesoLineare":0.42},
+    {"id":"TI","nome":"Trave a I (TI)","tipo":"I","base":40,"altezza":80,"luceMax":15,"pesoLineare":0.58},
+    {"id":"TNL","nome":"Trave a T nuova linea (TNL)","tipo":"T","base":40,"altezza":80,"luceMax":14,"pesoLineare":0.55}
+  ]
+}
