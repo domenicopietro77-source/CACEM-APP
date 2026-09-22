@@ -14,7 +14,7 @@ export function inizializzaScena3D() {
   const container = document.getElementById("threeView");
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x2a2f3a);
+  scene.background = new THREE.Color(0xe8eaed);
   scene.fog = null;
 
   camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
@@ -369,21 +369,11 @@ export function aggiornaScena3D(s) {
   }
 
   if (s.generale.carroponte) {
-    const quotaCarroponte = Math.max(0.5, H * 0.62);
+    const quotaCarroponte = Math.max(0.25, Hcolmo - 1.0);
     const baseCarroponte = Math.max(traveBase * 0.8, 0.20);
     const altezzaCarroponte = Math.max(traveAltezza * 0.55, 0.25);
-
-    creaBox(
-      L,
-      altezzaCarroponte,
-      baseCarroponte,
-      L / 2,
-      quotaCarroponte,
-      W / 2,
-      0xd4d0c8
-    );
+    creaBox(L, altezzaCarroponte, baseCarroponte, L / 2, quotaCarroponte, W / 2, 0x35658a);
   }
-
   fit(s);
 }
 
@@ -463,27 +453,15 @@ function creaTraveTrasversale(
 }
 
 function fit(s) {
-  const L = s.campate.reduce(
-    (sum, campata) =>
-      sum + Number(campata.interasse || 0),
-    0
-  );
-
-  const W = Number(s.generale.luce || 0);
-  const H = Number(s.generale.altezzaPilastro || 0);
-
-  camera.position.set(
-    L * 0.95,
-    H * 1.1,
-    -W * 1.25
-  );
-
-  controls.target.set(
-    L / 2,
-    H / 2,
-    W / 2
-  );
-
+  const L=s.campate.reduce((sum,c)=>sum+Number(c.interasse||0),0);
+  const W=Number(s.generale.luce||0);
+  const H=Number(s.generale.altezzaPilastro||0);
+  const rise=W*Number(s.generale.pendenzaCopertura||0)/200;
+  const distance=Math.max(L,W,H+rise,1)*1.8;
+  const target=new THREE.Vector3(L/2,(H+rise)/2,W/2);
+  const direction=new THREE.Vector3(1,0.78,-1).normalize();
+  camera.position.copy(target).addScaledVector(direction,distance);
+  controls.target.copy(target);
   controls.update();
 }
 

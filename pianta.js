@@ -157,7 +157,7 @@ function disegnaPilastro(x,z,label,ox,oy,sc,s){
   ctx.lineWidth=1.5;
   ctx.fillRect(ox+x*sc-w/2,oy+z*sc-h/2,w,h);
   ctx.strokeRect(ox+x*sc-w/2,oy+z*sc-h/2,w,h);
-  ctx.fillStyle="#4a9eff";
+  ctx.fillStyle="#26333f";
   ctx.font="10px monospace";
   ctx.fillText(label,ox+x*sc+w/2+6,oy+z*sc-h/2-7);
 }
@@ -228,7 +228,7 @@ function draw(s){
   ctx.fillText("A",ox-16,yAA);ctx.fillText("A",ox+L*sc+16,yAA);
   ctx.fillText("B",xBB,oy-16);ctx.fillText("B",xBB,oy+W*sc+16);
   ctx.textAlign="left";
-  ctx.fillStyle="#e9eef5";ctx.font="12px monospace";ctx.fillText("N!‘",ox+10,oy+18);
+  ctx.fillStyle="#e9eef5";ctx.font="12px monospace";ctx.fillText("N!â€˜",ox+10,oy+18);
 }
 
 export function aggiornaPianta(s) {

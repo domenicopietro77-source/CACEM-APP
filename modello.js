@@ -1,4 +1,4 @@
-import { trovaTrave, trovaTegolo } from "./catalogo.js";
+import { trovaTrave, trovaTegolo, getCatalogo } from "./catalogo.js";
 
 export const CHIAVE = "cacem-stato-v3";
 
@@ -216,7 +216,7 @@ export function calcolaDerivati(s) {
       "Fondazione",
       s.pilastri.fondazione,
       numPilastri,
-      "0.90×0.90×0.80",
+      "0.90Ã—0.90Ã—0.80",
       volumeFondazioni
     ],
     [
@@ -225,9 +225,9 @@ export function calcolaDerivati(s) {
       tipoPilastro,
       numPilastri,
       (basePilastro / 100).toFixed(2) +
-        "×" +
+        "Ã—" +
         (altezzaSezionePilastro / 100).toFixed(2) +
-        "×" +
+        "Ã—" +
         altezzaPilastro.toFixed(2),
       volumePilastri
     ],
@@ -237,9 +237,9 @@ export function calcolaDerivati(s) {
       s.travi.tipoId,
       2,
       L.toFixed(2) +
-        "×" +
+        "Ã—" +
         (t.base / 100).toFixed(2) +
-        "×" +
+        "Ã—" +
         (t.altezza / 100).toFixed(2),
       volumeTraviBanchina
     ],
@@ -249,9 +249,9 @@ export function calcolaDerivati(s) {
       s.travi.tipoId,
       numCampate,
       W.toFixed(2) +
-        "×" +
+        "Ã—" +
         (t.base / 100).toFixed(2) +
-        "×" +
+        "Ã—" +
         (t.altezza / 100).toFixed(2),
       volumeTraviTrasversali
     ],
@@ -261,7 +261,7 @@ export function calcolaDerivati(s) {
       s.copertura.tegoloId,
       numTegoli,
       (k.larghezza || 2.5).toFixed(2) +
-        "×" +
+        "Ã—" +
         lunghezzaFalda.toFixed(2),
       volumeTegoli
     ],
@@ -271,9 +271,9 @@ export function calcolaDerivati(s) {
       s.pannelli.tipo,
       1,
       perimetro.toFixed(2) +
-        "×" +
+        "Ã—" +
         altezzaPilastro.toFixed(2) +
-        "×" +
+        "Ã—" +
         spessorePannello.toFixed(2),
       volumePannelli
     ]
@@ -286,20 +286,27 @@ export function calcolaDerivati(s) {
       "TT",
       1,
       L.toFixed(2) +
-        "×" +
+        "Ã—" +
         W.toFixed(2),
       volumeInterpiano
     ]);
   }
 
-  const prices = {
-    Fondazioni: 280,
-    Pilastri: 320,
-    Travi: 390,
-    Copertura: 420,
-    Pannelli: 350,
-    Solai: 300
-  };
+  function prezzoUnitario(famiglia) {
+    const euroM3 = getCatalogo("listino")?.euro_m3 || {};
+    const chiavi = {
+      Fondazioni: "calcestruzzo_fondazioni",
+      Pilastri: "calcestruzzo_pilastri",
+      Travi: "calcestruzzo_travi",
+      Copertura: "calcestruzzo_tegoli",
+      Pannelli: "calcestruzzo_pannelli",
+      Solai: "calcestruzzo_solaio"
+    };
+    return Number(euroM3[chiavi[famiglia]] || 0);
+  }
+
+  const distinta = d.map(row => [...row, prezzoUnitario(row[0])]);
+  const prezzoTotale = distinta.reduce((sum, row) => sum + row[5] * row[6], 0);
 
   return {
     lunghezza: L,
@@ -315,12 +322,8 @@ export function calcolaDerivati(s) {
       totale: total
     },
     peso: total * 2.5,
-    distinta: d,
-    prezzoTotale: d.reduce(
-      (sum, row) =>
-        sum + row[5] * (prices[row[0]] || 0),
-      0
-    ),
+    distinta,
+    prezzoTotale,
     quotaColmo:
       altezzaPilastro +
       W * pendenza / 200

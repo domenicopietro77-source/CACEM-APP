@@ -61,7 +61,7 @@ function sezioneAA(ctx,s,d,ox,base,sc){
   quotaV(ctx,ox+d.L*sc+74,base,ridgeY,"h colmo "+(d.H+d.rise).toFixed(2)+" m");
   if(d.interpiano)quotaV(ctx,ox+d.L*sc+110,base,base-d.hInterpiano*sc,"h interpiano "+d.hInterpiano.toFixed(2)+" m");
   quotaH(ctx,ox,ox+d.L*sc,base+38,"Lunghezza "+d.L.toFixed(2)+" m");
-  ctx.fillStyle="#dce5ee";ctx.font="11px monospace";ctx.fillText("SEZIONE A-A · scala reale 1:1",10,20);
+  ctx.fillStyle="#dce5ee";ctx.font="11px monospace";ctx.fillText("SEZIONE A-A Â· scala reale 1:1",10,20);
 }
 function sezioneBB(ctx,d,ox,base,sc){
   terreno(ctx,ox,base,d.W*sc);
@@ -79,14 +79,18 @@ function sezioneBB(ctx,d,ox,base,sc){
   quotaV(ctx,ox+d.W*sc+38,base,yP,"h gronda "+d.H.toFixed(2)+" m");
   quotaV(ctx,ox+d.W*sc+74,base,ridgeY,"h colmo "+(d.H+d.rise).toFixed(2)+" m");
   if(d.interpiano)quotaV(ctx,ox+d.W*sc+110,base,base-d.hInterpiano*sc,"h interpiano "+d.hInterpiano.toFixed(2)+" m");
-  ctx.fillStyle="#dce5ee";ctx.font="11px monospace";ctx.fillText("SEZIONE B-B · scala reale 1:1",10,20);
+  ctx.fillStyle="#dce5ee";ctx.font="11px monospace";ctx.fillText("SEZIONE B-B Â· scala reale 1:1",10,20);
 }
 function sec(canvas,s,aa){
   const setup=setupCanvas(canvas);if(!setup||!s)return;
-  const {ctx,width:w,height:h}=setup,d=dati(s),C=aa?d.L:d.W;
-  const top=55,bottom=90,side=150,visual=d.H+d.rise+.8;
-  const sc=Math.max(.05,Math.min((w-side*2)/Math.max(C,1),(h-top-bottom)/Math.max(visual,1)));
-  const ox=(w-C*sc)/2,base=h-bottom;
+  const{ctx,width:w,height:h}=setup,d=dati(s),C=aa?d.L:d.W;
+  const visual=d.H+d.rise+.8;
+  const targetHeight=h*.75;
+  const sc=Math.max(.05,Math.min((w-210)/Math.max(C,1),targetHeight/Math.max(visual,1)));
+  const visualPx=visual*sc;
+  const base=(h+visualPx)/2;
+  const ox=(w-C*sc)/2;
+  ctx.fillStyle="#f8fafc";ctx.fillRect(0,0,w,h);
   if(aa)sezioneAA(ctx,s,d,ox,base,sc);else sezioneBB(ctx,d,ox,base,sc);
 }
 export function inizializzaSezioni(){}
