@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const state={
- project:null,catalog:null,items:[],selected:null,view:"3d",grid:true,snap:true,mode:"select",
+ project:null,catalog:null,rules:null,schema:null,items:[],selected:null,view:"3d",grid:true,snap:true,mode:"select",
  config:{bays:6,spacing:900,depth:1500,height:800,pillarType:"PP2",pillarSize:60,drainDia:160,foundation:"BICCHIERE",
  beamLong:"TL",beamTrans:"TL",beamH:75,beamW:50,floorOn:false,floorZ:400,floorType:"TT",floorT:25,
  roofType:"AL",roofSlope:7,coping:"CURVA PICCOLA",roofT:12,panelType:"VERTICALE",panelT:24,finish:"FACCIA VISTA",gran1:50,gran2:50,
@@ -28,6 +28,34 @@ const familyDefs={
  "COPPELLE":[["CURVA PICCOLA","Coppella curva piccola"],["CURVA GRANDE","Coppella curva grande"],["CURVA SPECIALE","Coppella curva speciale"],["LAMIERA","Coppella in lamiera"]],
  "PANNELLI":[["VERTICALE","Pannello verticale"],["ORIZZONTALE","Pannello orizzontale"]]
 };
+function applyConfigRules(){
+  const rules=state.rules?.rules||[];
+  const values={floorOn:$("#floorOn")?.value==="SI",finish:$("#finish")?.value,pillarType:$("#pillarType")?.value};
+  const ids=new Set();
+  rules.forEach(rule=>{
+    const f=rule.when?.field, v=values[f];
+    let ok=false;
+    if(rule.when?.equals!==undefined) ok=v===rule.when.equals;
+    if(rule.when?.in) ok=rule.when.in.includes(v);
+    if(ok) (rule.enable||[]).forEach(id=>ids.add(id));
+  });
+  const controlled=new Set(rules.flatMap(r=>[...(r.enable||[]),...(r.disable||[])]));
+  controlled.forEach(id=>{
+    const e=$("#"+id); if(!e)return;
+    const enable=ids.has(id);
+    e.disabled=!enable;
+    e.closest(".row")?.classList.toggle("disabled",!enable);
+    if(e.type==="checkbox") e.closest("label")?.classList.toggle("disabled",!enable);
+  });
+}
+function loadV2Configuration(){
+  return Promise.all([
+    fetch("data/cacem-rules.json").then(r=>r.ok?r.json():null),
+    fetch("data/cacem-config-schema.json").then(r=>r.ok?r.json():null)
+  ]).then(([rules,schema])=>{
+    state.rules=rules; state.schema=schema; applyConfigRules();
+  }).catch(()=>{});
+}
 function cfgFromUI(){
  const c=state.config;
  c.bays=+$("#bays").value;c.spacing=+$("#spacing").value;c.depth=+$("#depth").value;c.height=+$("#height").value;
@@ -37,6 +65,7 @@ function cfgFromUI(){
  c.roofType=$("#roofType").value;c.roofSlope=+$("#roofSlope").value;c.coping=$("#coping").value;c.roofT=+$("#roofT").value;
  c.panelType=$("#panelType").value;c.panelT=+$("#panelT").value;c.finish=$("#finish").value;c.gran1=+$("#gran1").value;c.gran2=+$("#gran2").value;
  c.consoles={floor:$("#consoleFloor").checked,beam:$("#consoleBeam").checked,crane:$("#consoleCrane").checked};
+ applyConfigRules();
  return c;
 }
 function setUI(c){Object.entries({bays:c.bays,spacing:c.spacing,depth:c.depth,height:c.height,pillarType:c.pillarType,pillarSize:c.pillarSize,drainDia:c.drainDia,foundation:c.foundation,beamLong:c.beamLong,beamH:c.beamH,beamTrans:c.beamTrans,beamW:c.beamW,floorZ:c.floorZ,floorT:c.floorT,roofSlope:c.roofSlope,roofT:c.roofT,panelT:c.panelT,gran1:c.gran1,gran2:c.gran2}).forEach(([k,v])=>{const e=$("#"+k);if(e)e.value=v});
@@ -228,5 +257,5 @@ $("#applyGrid").onclick=rebuildModel;
 $("#export").onclick=()=>updateStatus("Esportazione DXF: interfaccia predisposta, collegamento al writer DXF nella fase successiva");
 $("#dxfInput").onchange=e=>{if(e.target.files[0])updateStatus("DXF ricevuto: verrà usato per la verifica dei profili reali")};
 $("#search").oninput=e=>{$$(".libItem").forEach(b=>b.style.display=b.dataset.search.includes(e.target.value.toLowerCase())?"flex":"none")};
-$("#pillarType").onchange=()=>{state.config.pillarType=$("#pillarType").value;rebuildModel()};$("#floorOn").onchange=rebuildModel;
-init();populateLibrary();loadSource().finally(()=>{setUI(state.config);rebuildModel();view("3d")});
+$("#pillarType").onchange=()=>{state.config.pillarType=$("#pillarType").value;applyConfigRules();rebuildModel()};$("#floorOn").onchange=()=>{applyConfigRules();rebuildModel()};$("#finish").onchange=()=>{applyConfigRules();rebuildModel()};
+init();populateLibrary();loadSource().finally(()=>{setUI(state.config);loadV2Configuration().finally(()=>{applyConfigRules();rebuildModel();view("3d")})});
