@@ -1,12 +1,1 @@
-{
-  "descrizione":"Catalogo pannelli di tamponamento",
-  "spessori":[20,24,28],
-  "finiture":[
-    {"id":"FV","nome":"Faccia vista","colori":null},
-    {"id":"GR","nome":"Granigliato 2 colori","colori":["#d9d2c5","#b8b0a0"],"percentualiDefault":[70,30]}
-  ],
-  "tipi":[
-    {"id":"V","nome":"Pannello verticale"},
-    {"id":"O","nome":"Pannello orizzontale"}
-  ]
-}
+{"descrizione":"Catalogo pannelli di tamponamento","spessori":[20,24,28],"finiture":[{"id":"FV","nome":"Faccia vista","colori":null},{"id":"GR","nome":"Granigliato 2 colori","colori":["#d9d2c5","#b8b0a0"],"percentualiDefault":[70,30]}],"tipi":[{"id":"V","nome":"Pannello verticale"},{"id":"O","nome":"Pannello orizzontale"}]}
