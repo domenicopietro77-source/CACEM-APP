@@ -318,6 +318,15 @@ export function renderUI() {
   setChk('extra-interpiano', g.interpiano);
   setChk('extra-carroponte', g.carroponte);
   setVal('pendenza-copertura', g.pendenzaCopertura);
+
+  const l = stato.listino || {};
+  setVal('listino-fondazioni', l.fondazioni);
+  setVal('listino-pilastri', l.pilastri);
+  setVal('listino-travi', l.travi);
+  setVal('listino-tegoli', l.tegoli);
+  setVal('listino-pannelli', l.pannelli);
+  setVal('listino-solaio', l.solaio);
+  setVal('listino-coppelle', l.coppelle);
 }
 
 function popolaSelectTravi() {
@@ -416,6 +425,15 @@ function collegaListener() {
       mostraSchermataCommesse();
     };
   }
+
+  if (!stato.listino) stato.listino = { fondazioni:280, pilastri:320, travi:390, tegoli:420, pannelli:350, solaio:300, coppelle:28 };
+  bindNum('listino-fondazioni', v => { stato.listino.fondazioni = v; notificaCambio(); });
+  bindNum('listino-pilastri', v => { stato.listino.pilastri = v; notificaCambio(); });
+  bindNum('listino-travi', v => { stato.listino.travi = v; notificaCambio(); });
+  bindNum('listino-tegoli', v => { stato.listino.tegoli = v; notificaCambio(); });
+  bindNum('listino-pannelli', v => { stato.listino.pannelli = v; notificaCambio(); });
+  bindNum('listino-solaio', v => { stato.listino.solaio = v; notificaCambio(); });
+  bindNum('listino-coppelle', v => { stato.listino.coppelle = v; notificaCambio(); });
 }
 
 function rinominaConModale(id, nomeAttuale) {

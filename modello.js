@@ -61,6 +61,15 @@ export function statoDefault() {
       pluvialeDiametro: 100,
       fondazione: 'bicchiere_pluviale'
     },
+    listino: {
+      fondazioni: 280,
+      pilastri: 320,
+      travi: 390,
+      tegoli: 420,
+      pannelli: 350,
+      solaio: 300,
+      coppelle: 28
+    },
     pannelli: {
       tipo: 'V',
       spessore: 20,

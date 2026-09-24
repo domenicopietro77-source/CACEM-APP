@@ -1,7 +1,7 @@
 // distinta.js — Computo metrico con volumi, pesi, prezzi + export CSV
 
 import { calcolaDerivati, lunghezzaTotale, luceTrasversale } from './modello.js';
-import { trovaTrave, trovaTegolo, getPrezzoM3, getPrezzoMl } from './catalogo.js';
+import { trovaTrave, trovaTegolo } from './catalogo.js';
 
 const DENSITA_CLS = 2.5;
 
@@ -13,13 +13,14 @@ export function costruisciDistinta(stato) {
   const W = d.W;
   const H = d.H;
 
-  const prezzoPil = getPrezzoM3('calcestruzzo_pilastri') || 320;
-  const prezzoTra = getPrezzoM3('calcestruzzo_travi') || 390;
-  const prezzoTeg = getPrezzoM3('calcestruzzo_tegoli') || 420;
-  const prezzoPan = getPrezzoM3('calcestruzzo_pannelli') || 350;
-  const prezzoSol = getPrezzoM3('calcestruzzo_solaio') || 300;
-  const prezzoFon = getPrezzoM3('calcestruzzo_fondazioni') || 280;
-  const prezzoCop = getPrezzoMl('coppelle') || 28;
+  const listino = stato.listino || {};
+  const prezzoPil = listino.pilastri || 320;
+  const prezzoTra = listino.travi || 390;
+  const prezzoTeg = listino.tegoli || 420;
+  const prezzoPan = listino.pannelli || 350;
+  const prezzoSol = listino.solaio || 300;
+  const prezzoFon = listino.fondazioni || 280;
+  const prezzoCop = listino.coppelle || 28;
 
   const righe = [];
 
