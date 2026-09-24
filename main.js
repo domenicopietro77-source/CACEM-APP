@@ -79,9 +79,11 @@ function collegaTabs() {
     tab.onclick = () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
       tab.classList.add('active');
       const view = document.getElementById('view-' + tab.dataset.view);
       if (view) view.classList.add('active');
+      if (view) view.style.display = 'block';
 
       const v = tab.dataset.view;
       const s = getStato();

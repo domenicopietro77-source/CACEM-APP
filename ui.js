@@ -98,11 +98,7 @@ function gestisciAzione(azione, id) {
   if (azione === 'rinomina') {
     const c = getCommessa(id);
     if (!c) return;
-    const nuovo = prompt('Nuovo nome:', c.nome);
-    if (nuovo && nuovo.trim()) {
-      rinominaCommessa(id, nuovo.trim());
-      mostraSchermataCommesse();
-    }
+    rinominaConModale(id, c.nome);
     return;
   }
 
@@ -113,10 +109,29 @@ function gestisciAzione(azione, id) {
   }
 
   if (azione === 'elimina') {
-    if (confirm('Eliminare questa commessa?')) {
+    const c = getCommessa(id);
+    if (!c) return;
+    const modale = document.getElementById('modale-elimina');
+    const nomeEl = document.getElementById('modale-elimina-nome');
+    const btnOk = document.getElementById('modale-elimina-ok');
+    const btnAnnulla = document.getElementById('modale-elimina-annulla');
+
+    if (!modale) return;
+    if (nomeEl) nomeEl.textContent = c.nome;
+    modale.style.display = 'flex';
+
+    const chiudi = () => {
+      modale.style.display = 'none';
+      btnOk.onclick = null;
+      btnAnnulla.onclick = null;
+    };
+
+    btnOk.onclick = () => {
+      chiudi();
       eliminaCommessa(id);
       mostraSchermataCommesse();
-    }
+    };
+    btnAnnulla.onclick = chiudi;
     return;
   }
 }
@@ -401,6 +416,40 @@ function collegaListener() {
       mostraSchermataCommesse();
     };
   }
+}
+
+function rinominaConModale(id, nomeAttuale) {
+  const modale = document.getElementById('modale-rinomina');
+  const input = document.getElementById('modale-rinomina-input');
+  const btnOk = document.getElementById('modale-rinomina-ok');
+  const btnAnnulla = document.getElementById('modale-rinomina-annulla');
+
+  if (!modale || !input) return;
+
+  input.value = nomeAttuale;
+  modale.style.display = 'flex';
+  setTimeout(() => input.focus(), 50);
+
+  const chiudi = () => {
+    modale.style.display = 'none';
+    btnOk.onclick = null;
+    btnAnnulla.onclick = null;
+  };
+
+  const conferma = () => {
+    const nuovo = input.value.trim();
+    if (!nuovo) return;
+    chiudi();
+    rinominaCommessa(id, nuovo);
+    mostraSchermataCommesse();
+  };
+
+  btnOk.onclick = conferma;
+  btnAnnulla.onclick = chiudi;
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') conferma();
+    if (e.key === 'Escape') chiudi();
+  };
 }
 
 /* ============================================================
