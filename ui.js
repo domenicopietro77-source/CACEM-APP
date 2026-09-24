@@ -255,9 +255,11 @@ export function inizializzaUI(s, callback) {
 function notificaCambio() {
   renderUI();
   aggiornaRisultati(stato);
-  onChange(stato);
+  if (typeof onChange === 'function') onChange(stato);
   salvaStato(stato);
   aggiornaStatoCommessa(stato);
+  // NOTIFICA TUTTI I MODULI VISIVI
+  window.dispatchEvent(new CustomEvent('cacem:state-change', { detail: { stato: stato } }));
 }
 
 /* ============================================================

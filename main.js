@@ -208,6 +208,15 @@ async function avvia() {
   window.attivaEditor = attivaEditor;
 }
 
+window.addEventListener('cacem:state-change', (e) => {
+  const s = e.detail && e.detail.stato;
+  if (!s) return;
+  try { aggiornaScena3D(s); } catch (err) { console.warn('3D:', err.message); }
+  try { aggiornaPianta(s); } catch (err) { console.warn('Pianta:', err.message); }
+  try { aggiornaProspetti(s); } catch (err) { console.warn('Prospetti:', err.message); }
+  try { aggiornaSezioni(s); } catch (err) { console.warn('Sezioni:', err.message); }
+});
+
 window.addEventListener('cacem:editor-open', (e) => {
   const stato = e.detail && e.detail.stato;
   setTimeout(() => {
