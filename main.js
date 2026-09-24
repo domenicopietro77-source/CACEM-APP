@@ -214,7 +214,7 @@ window.addEventListener('cacem:editor-open', (e) => {
     } catch (err) {
       console.warn('Errore attivazione editor:', err.message);
     }
-  }, 100);
+  }, 150);
 });
 
 avvia();
