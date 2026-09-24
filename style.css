@@ -659,3 +659,57 @@ label.check input[type="checkbox"] {
 .distinta-scroll::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+.modale-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modale-box {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modale-box h2 {
+  font-size: 18px;
+  margin-bottom: 18px;
+  color: #1a1d24;
+}
+
+.modale-box label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.modale-box input {
+  padding: 10px 12px;
+  border: 1px solid #e0e3e8;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.modale-box input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.modale-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
