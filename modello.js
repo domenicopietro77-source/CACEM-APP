@@ -37,30 +37,41 @@ export function statoDefault() {
         { id: 4, interasse: 14.895 }
       ]
     },
-    copertura: {
-      tipo: 'AL',
-      tegoloId: 'AL'
-    },
-    travi: {
-      banchina: 'TL',
-      trasversale: 'TD'
-    },
     generale: {
       altezzaPilastro: 6,
       pendenzaCopertura: 5,
       interpiano: false,
-      altezzaInterpiano: 4,
+      interpianoLivelli: 1,
+      interpianoH1: 4,
+      interpianoH2: 4,
+      interpianoSolaio: 'TT80',
       carroponte: false,
       portataCarroponte: 10,
-      edificioEsistente: null
+      altezzaEstradossoCarroponte: 5,
+      edificioEsistente: null,
+      lucePilastroCentrale: 15
     },
+
+    copertura: {
+      tipo: 'AL',
+      tegoloId: 'AL'
+    },
+
+    travi: {
+      banchina: 'TNL',
+      centraleAttiva: true,
+      centrale: 'TI'
+    },
+
     pilastri: {
       base: 40,
       altezzaSezione: 40,
       pluviale: true,
       pluvialeDiametro: 100,
-      fondazione: 'bicchiere_pluviale'
+      tipoFondazione: 'bicchiere',
+      tipoBicchiere: 'bicchiere_laterale'
     },
+
     listino: {
       fondazioni: 280,
       pilastri: 320,

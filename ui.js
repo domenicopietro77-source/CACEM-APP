@@ -317,7 +317,46 @@ export function renderUI() {
 
   setChk('extra-interpiano', g.interpiano);
   setChk('extra-carroponte', g.carroponte);
-  setVal('pendenza-copertura', g.pendenzaCopertura);
+  setSelect('trave-banchina', stato.travi.banchina, [
+    { value: 'TU', label: 'TU — Trave a U canale' },
+    { value: 'TNL', label: 'TNL — Trave T nuova linea' }
+  ]);
+  setSelect('trave-centrale', stato.travi.centrale, [
+    { value: 'TI', label: 'TI — Trave a I' }
+  ]);
+  setSelect('pilastro-tipo-fondazione', stato.pilastri.tipoFondazione, [
+    { value: 'bicchiere', label: 'Bicchiere' },
+    { value: 'armatubo', label: 'Armatubo' }
+  ]);
+  setSelect('pilastro-tipo-bicchiere', stato.pilastri.tipoBicchiere, [
+    { value: 'bicchiere_laterale', label: 'Laterale con pluviale' },
+    { value: 'bicchiere_pluviale', label: 'Con pluviale' },
+    { value: 'bicchiere_centrale', label: 'Centrale senza pluviale' }
+  ]);
+  setVal('extra-interpiano', stato.generale.interpiano);
+  setVal('interpiano-livelli', stato.generale.interpianoLivelli);
+  setVal('interpiano-h1', stato.generale.interpianoH1);
+  setVal('interpiano-h2', stato.generale.interpianoH2);
+  setVal('interpiano-solaio', stato.generale.interpianoSolaio);
+  setVal('extra-carroponte', stato.generale.carroponte);
+  setVal('carroponte-portata', stato.generale.portataCarroponte);
+  setVal('carroponte-altezza', stato.generale.altezzaEstradossoCarroponte);
+  setVal('pendenza-copertura', stato.generale.pendenzaCopertura);
+  setVal('graniglia-tipo', stato.pannelli.granigliaTipo);
+  setVal('graniglia-colore-1', stato.pannelli.coloriGraniglia[0]);
+  setVal('graniglia-colore-2', stato.pannelli.coloriGraniglia[1]);
+  setVal('graniglia-perc-1', stato.pannelli.percentualiGraniglia[0]);
+  setVal('graniglia-perc-2', stato.pannelli.percentualiGraniglia[1]);
+
+  const bloccoG = document.getElementById('blocco-graniglia');
+  if (bloccoG) {
+    bloccoG.style.display = stato.pannelli.finitura === 'GR' ? 'block' : 'none';
+  }
+  const labelC2 = document.getElementById('label-colore-2');
+  const labelP2 = document.getElementById('label-perc-2');
+  const mostra2 = stato.pannelli.granigliaTipo === 2;
+  if (labelC2) labelC2.style.display = mostra2 ? 'flex' : 'none';
+  if (labelP2) labelP2.style.display = mostra2 ? 'flex' : 'none';
 
   const l = stato.listino || {};
   setVal('listino-fondazioni', l.fondazioni);
@@ -406,6 +445,28 @@ function collegaListener() {
   bindSel('pilastro-fondazione', v => { stato.pilastri.fondazione = v; notificaCambio(); });
 
   bindSel('pannello-finitura', v => { stato.pannelli.finitura = v; notificaCambio(); });
+  bindColor('graniglia-colore-1', v => { stato.pannelli.coloriGraniglia[0] = v; notificaCambio(); });
+  bindColor('graniglia-colore-2', v => { stato.pannelli.coloriGraniglia[1] = v; notificaCambio(); });
+  bindNum('graniglia-perc-1', v => {
+    stato.pannelli.percentualiGraniglia[0] = v;
+    stato.pannelli.percentualiGraniglia[1] = 100 - v;
+    notificaCambio();
+  });
+
+  bindSel('pilastro-tipo-fondazione', v => { stato.pilastri.tipoFondazione = v; notificaCambio(); });
+  bindSel('pilastro-tipo-bicchiere', v => { stato.pilastri.tipoBicchiere = v; notificaCambio(); });
+  bindSel('trave-centrale', v => { stato.travi.centrale = v; notificaCambio(); });
+  bindChk('trave-centrale-attiva', v => { stato.travi.centraleAttiva = v; notificaCambio(); });
+  bindChk('extra-interpiano', v => { stato.generale.interpiano = v; notificaCambio(); });
+  bindSel('interpiano-livelli', v => { stato.generale.interpianoLivelli = parseInt(v,10); notificaCambio(); });
+  bindNum('interpiano-h1', v => { stato.generale.interpianoH1 = v; notificaCambio(); });
+  bindNum('interpiano-h2', v => { stato.generale.interpianoH2 = v; notificaCambio(); });
+  bindSel('interpiano-solaio', v => { stato.generale.interpianoSolaio = v; notificaCambio(); });
+  bindChk('extra-carroponte', v => { stato.generale.carroponte = v; notificaCambio(); });
+  bindNum('carroponte-portata', v => { stato.generale.portataCarroponte = v; notificaCambio(); });
+  bindNum('carroponte-altezza', v => { stato.generale.altezzaEstradossoCarroponte = v; notificaCambio(); });
+  bindNum('pendenza-copertura', v => { stato.generale.pendenzaCopertura = v; notificaCambio(); });
+  bindSel('graniglia-tipo', v => { stato.pannelli.granigliaTipo = parseInt(v,10); notificaCambio(); });
   bindColor('graniglia-colore-1', v => { stato.pannelli.coloriGraniglia[0] = v; notificaCambio(); });
   bindColor('graniglia-colore-2', v => { stato.pannelli.coloriGraniglia[1] = v; notificaCambio(); });
   bindNum('graniglia-perc-1', v => {
