@@ -69,10 +69,19 @@ export function inizializzaProspetti() {
 }
 
 function adattaCanvas(entry) {
+  const dpr = window.devicePixelRatio || 1;
   const r = entry.canvas.getBoundingClientRect();
-  if (r.width > 0 && r.height > 0 && (entry.canvas.width !== r.width || entry.canvas.height !== r.height)) {
-    entry.canvas.width = r.width;
-    entry.canvas.height = r.height;
+  if (r.width === 0 || r.height === 0) return;
+
+  const larghezzaPx = Math.round(r.width * dpr);
+  const altezzaPx = Math.round(r.height * dpr);
+
+  if (entry.canvas.width !== larghezzaPx || entry.canvas.height !== altezzaPx) {
+    entry.canvas.width = larghezzaPx;
+    entry.canvas.height = altezzaPx;
+    entry.canvas.style.width = r.width + 'px';
+    entry.canvas.style.height = r.height + 'px';
+    entry.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 }
 
@@ -80,6 +89,9 @@ function autoFit(n, stato) {
   const entry = canvases[n];
   if (!entry || !stato) return;
   adattaCanvas(entry);
+  const dpr = window.devicePixelRatio || 1;
+  const larghezzaCss = entry.canvas.width / dpr;
+  const altezzaCss = entry.canvas.height / dpr;
 
   const L = lunghezzaTotale(stato);
   const W = luceTrasversale(stato);
@@ -93,12 +105,12 @@ function autoFit(n, stato) {
   const altezza = Hcolmo;
   const margine = 110;
 
-  const scalaX = (entry.canvas.width - margine * 2) / larghezza;
-  const scalaY = (entry.canvas.height - margine * 2) / altezza;
+  const scalaX = (larghezzaCss - margine * 2) / larghezza;
+  const scalaY = (altezzaCss - margine * 2) / altezza;
   const v = viste[n];
   v.scala = Math.min(scalaX, scalaY);
-  v.offsetX = (entry.canvas.width - larghezza * v.scala) / 2;
-  v.offsetY = (entry.canvas.height + altezza * v.scala) / 2 - 40;
+  v.offsetX = (larghezzaCss - larghezza * v.scala) / 2;
+  v.offsetY = (altezzaCss + altezza * v.scala) / 2 - 40;
 }
 
 function toPx(n, x, y) {
@@ -122,8 +134,9 @@ function disegnaProspetto(n, stato) {
   const canvas = entry.canvas;
   const v = viste[n];
 
+  const dpr = window.devicePixelRatio || 1;
   ctx.fillStyle = COLORI.sfondo;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
   const L = lunghezzaTotale(stato);
   const W = luceTrasversale(stato);

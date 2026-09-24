@@ -74,15 +74,28 @@ export function inizializzaPianta(canvasEl) {
 
 function adattaCanvas() {
   if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
   const r = canvas.getBoundingClientRect();
-  if (r.width > 0 && r.height > 0) {
-    canvas.width = r.width;
-    canvas.height = r.height;
+  if (r.width === 0 || r.height === 0) return;
+
+  const larghezzaPx = Math.round(r.width * dpr);
+  const altezzaPx = Math.round(r.height * dpr);
+
+  if (canvas.width !== larghezzaPx || canvas.height !== altezzaPx) {
+    canvas.width = larghezzaPx;
+    canvas.height = altezzaPx;
+    canvas.style.width = r.width + 'px';
+    canvas.style.height = r.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 }
 
 function autoFit(stato) {
   if (!stato || !canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const larghezzaCss = canvas.width / dpr;
+  const altezzaCss = canvas.height / dpr;
+
   const L = lunghezzaTotale(stato);
   const W = luceTrasversale(stato);
   const offsetP = (stato.pannelli.lati.sud.offset || 6) / 100;
@@ -90,12 +103,12 @@ function autoFit(stato) {
   const totaleW = W + offsetP * 2;
   const margine = 140;
 
-  const scalaX = (canvas.width - margine * 2) / totaleL;
-  const scalaY = (canvas.height - margine * 2) / totaleW;
+  const scalaX = (larghezzaCss - margine * 2) / totaleL;
+  const scalaY = (altezzaCss - margine * 2) / totaleW;
   scala = Math.min(scalaX, scalaY);
 
-  offsetX = (canvas.width - totaleL * scala) / 2 + offsetP * scala;
-  offsetY = (canvas.height - totaleW * scala) / 2 + offsetP * scala;
+  offsetX = (larghezzaCss - totaleL * scala) / 2 + offsetP * scala;
+  offsetY = (altezzaCss - totaleW * scala) / 2 + offsetP * scala;
 }
 
 function toPx(x, y) {
@@ -118,14 +131,15 @@ function disegna(stato) {
   const altP = stato.pilastri.altezzaSezione / 100;
   const offsetP = (stato.pannelli.lati.sud.offset || 6) / 100;
 
+  const dpr = window.devicePixelRatio || 1;
   ctx.fillStyle = COLORI.sfondo;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
   // Titolo
   ctx.fillStyle = COLORI.testo;
   ctx.font = 'italic bold 16px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText('PIANTA PILASTRI E PANNELLI', canvas.width / 2, 30);
+  ctx.fillText('PIANTA PILASTRI E PANNELLI', canvas.width / dpr / 2, 30);
 
   // Pannelli (linee doppie)
   disegnaPannelli(stato, L, W, offsetP);
@@ -245,7 +259,7 @@ function disegna(stato) {
   disegnaFrecciaProspetto(4, -pad, W / 2, 'destra');
 
   // Bussola nord
-  disegnaBussola(canvas.width - 60, 60);
+  disegnaBussola(canvas.width / dpr - 60, 60);
 }
 
 function posizioniX(stato) {
