@@ -631,3 +631,55 @@ export function mostraStatus(m) {
   const f = $('footer-status');
   if (f) f.textContent = m;
 }
+
+window.addEventListener('cacem:elemento-selezionato', (e) => {
+  const elemento = e.detail && e.detail.elemento;
+  if (!elemento) return;
+
+  const modale = document.getElementById('modale-elemento');
+  const titolo = document.getElementById('modale-elemento-titolo');
+  const info = document.getElementById('modale-elemento-info');
+  const btnChiudi = document.getElementById('modale-elemento-chiudi');
+  const btnElimina = document.getElementById('modale-elemento-elimina');
+
+  if (!modale) return;
+
+  const etichette = {
+    'pilastro': 'Pilastro',
+    'trave-banchina': 'Trave banchina',
+    'fondazione': 'Fondazione',
+    'pannello': 'Pannello tamponamento',
+    'copertura': 'Falda copertura',
+    'terreno': 'Terreno',
+    'interpiano': 'Interpiano',
+    'carroponte': 'Carroponte'
+  };
+
+  titolo.textContent = etichette[elemento.tipo] || elemento.tipo;
+  info.innerHTML = 
+    '<div>ID: ' + elemento.id + '</div>' +
+    (elemento.lato ? '<div>Lato: ' + elemento.lato + '</div>' : '') +
+    (elemento.falda ? '<div>Falda: ' + elemento.falda + '</div>' : '');
+
+  modale.style.display = 'flex';
+
+  const chiudi = () => {
+    modale.style.display = 'none';
+    // Chiama il deseleziona esterno
+    if (window.CACEM_deselezionaTutto) window.CACEM_deselezionaTutto();
+  };
+
+  btnChiudi.onclick = chiudi;
+  btnElimina.onclick = () => {
+    if (elemento.tipo === 'terreno' || elemento.tipo === 'copertura') {
+      alert('Non puoi eliminare questo elemento.');
+      return;
+    }
+    if (confirm('Eliminare ' + (etichette[elemento.tipo] || elemento.tipo) + '?')) {
+      if (window.CACEM_nascondiElemento) {
+        window.CACEM_nascondiElemento(elemento.tipo, elemento.id);
+      }
+      chiudi();
+    }
+  };
+});

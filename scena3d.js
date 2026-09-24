@@ -4,6 +4,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { lunghezzaTotale, luceTrasversale } from './modello.js';
 
+let raycaster = null;
+let mouse = null;
+let elementoSelezionato = null;
+let outlineHelper = null;
+
 let scene = null;
 let camera = null;
 let renderer = null;
@@ -96,6 +101,12 @@ export function inizializzaScena3D() {
   gruppoCapannone = new THREE.Group();
   scene.add(gruppoCapannone);
 
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  renderer.domElement.addEventListener('click', onClickCanvas3D);
+  renderer.domElement.addEventListener('mousemove', onMoveCanvas3D);
+
   window.addEventListener('resize', resizeScena3D);
   inizializzato = true;
   animate();
@@ -145,12 +156,13 @@ function mat(color, opts) {
   });
 }
 
-function addBox(w, h, d, x, y, z, material) {
+function addBox(w, h, d, x, y, z, material, userData) {
   const geo = new THREE.BoxGeometry(w, h, d);
   const mesh = new THREE.Mesh(geo, material);
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
+  if (userData) mesh.userData = userData;
   gruppoCapannone.add(mesh);
   return mesh;
 }
@@ -194,15 +206,15 @@ export function aggiornaScena3D(stato) {
 
   // Fila Sud (z = z0) e Nord (z = z0 + W)
   posizioniX.forEach(px => {
-    addBox(largFond, altFond, largFond, px, -altFond / 2, z0, matFond);
-    addBox(largFond, altFond, largFond, px, -altFond / 2, z0 + W, matFond);
+    addBox(largFond, altFond, largFond, px, -altFond / 2, z0, matFond, { tipo: 'fondazione', id: 'F' + px + '_sud' });
+    addBox(largFond, altFond, largFond, px, -altFond / 2, z0 + W, matFond, { tipo: 'fondazione', id: 'F' + px + '_nord' });
   });
 
   // Pilastri
   const matPil = mat(COLORI.pilastro, { roughness: 0.9 });
   posizioniX.forEach(px => {
-    addBox(baseP, H, altP, px, H / 2, z0, matPil);
-    addBox(baseP, H, altP, px, H / 2, z0 + W, matPil);
+    addBox(baseP, H, altP, px, H / 2, z0, matPil, { tipo: 'pilastro', id: 'PS' + px, lato: 'sud' });
+    addBox(baseP, H, altP, px, H / 2, z0 + W, matPil, { tipo: 'pilastro', id: 'PN' + px, lato: 'nord' });
   });
 
   // Travi di banchina (2 lati)
@@ -210,8 +222,8 @@ export function aggiornaScena3D(stato) {
   const altTrave = 0.60;
   const matTrave = mat(COLORI.trave, { roughness: 0.85 });
 
-  addBox(L, altTrave, baseTrave, 0, H + altTrave / 2, z0, matTrave);
-  addBox(L, altTrave, baseTrave, 0, H + altTrave / 2, z0 + W, matTrave);
+  addBox(L, altTrave, baseTrave, 0, H + altTrave / 2, z0, matTrave, { tipo: 'trave-banchina', id: 'TBS' });
+  addBox(L, altTrave, baseTrave, 0, H + altTrave / 2, z0 + W, matTrave, { tipo: 'trave-banchina', id: 'TBN' });
 
   // Travi trasversali (una per campata, per lato)
   const lungFalda = Math.sqrt(Math.pow(W / 2, 2) + Math.pow(salita, 2));
@@ -263,6 +275,7 @@ export function aggiornaScena3D(stato) {
   meshFaldaS.rotation.x = angoloFalda;
   meshFaldaS.castShadow = true;
   meshFaldaS.receiveShadow = true;
+  meshFaldaS.userData = { tipo: 'copertura', id: 'COP-SUD', falda: 'sud' };
   gruppoCapannone.add(meshFaldaS);
 
   const meshFaldaN = new THREE.Mesh(
@@ -273,27 +286,28 @@ export function aggiornaScena3D(stato) {
   meshFaldaN.rotation.x = -angoloFalda;
   meshFaldaN.castShadow = true;
   meshFaldaN.receiveShadow = true;
+  meshFaldaN.userData = { tipo: 'copertura', id: 'COP-NORD', falda: 'nord' };
   gruppoCapannone.add(meshFaldaN);
 
   // Pannelli tamponamento (4 lati)
   const matPann = mat(COLORI.pannello, { roughness: 0.95 });
-  addBox(L, H, spPann, 0, H / 2, z0 + spPann / 2, matPann);
-  addBox(L, H, spPann, 0, H / 2, z0 + W - spPann / 2, matPann);
-  addBox(spPann, H, W - spPann * 2, x0 + spPann / 2, H / 2, 0, matPann);
-  addBox(spPann, H, W - spPann * 2, x0 + L - spPann / 2, H / 2, 0, matPann);
+  addBox(L, H, spPann, 0, H / 2, z0 + spPann / 2, matPann, { tipo: 'pannello', id: 'PAN-SUD', lato: 'sud' });
+  addBox(L, H, spPann, 0, H / 2, z0 + W - spPann / 2, matPann, { tipo: 'pannello', id: 'PAN-NORD', lato: 'nord' });
+  addBox(spPann, H, W - spPann * 2, x0 + spPann / 2, H / 2, 0, matPann, { tipo: 'pannello', id: 'PAN-OVEST', lato: 'ovest' });
+  addBox(spPann, H, W - spPann * 2, x0 + L - spPann / 2, H / 2, 0, matPann, { tipo: 'pannello', id: 'PAN-EST', lato: 'est' });
 
   // Interpiano
   if (g.interpiano) {
     const matSol = mat(COLORI.solaio, { roughness: 0.9 });
-    addBox(L - spPann * 2, 0.25, W - spPann * 2, 0, g.altezzaInterpiano + 0.125, 0, matSol);
+    addBox(L - spPann * 2, 0.25, W - spPann * 2, 0, g.altezzaInterpiano + 0.125, 0, matSol, { tipo: 'interpiano', id: 'INT' });
   }
 
   // Carroponte
   if (g.carroponte) {
     const matCar = mat(COLORI.carroponte, { roughness: 0.5, metalness: 0.6 });
     const yCar = H - 1.5;
-    addBox(L - 2, 0.4, 0.3, 0, yCar, 0, matCar);
-    addBox(0.3, 0.4, W - 2, 0, yCar, 0, matCar);
+    addBox(L - 2, 0.4, 0.3, 0, yCar, 0, matCar, { tipo: 'carroponte', id: 'CARROPONTE-LONG' });
+    addBox(0.3, 0.4, W - 2, 0, yCar, 0, matCar, { tipo: 'carroponte', id: 'CARROPONTE-TRASV' });
   }
 
   // Pavimento
@@ -307,6 +321,7 @@ export function aggiornaScena3D(stato) {
   pav.rotation.x = -Math.PI / 2;
   pav.position.y = 0;
   pav.receiveShadow = true;
+  pav.userData = { tipo: 'terreno', id: 'TERRENO' };
   gruppoCapannone.add(pav);
 
   fitCamera(L, W, Hcolmo);
@@ -360,4 +375,87 @@ export function toggleWireframe() {
     }
   });
   return wireframeAttivo;
+}
+
+function onMoveCanvas3D(e) {
+  const container = document.getElementById('view-3d');
+  if (!container) return;
+  const r = container.getBoundingClientRect();
+  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(gruppoCapannone.children, true);
+
+  if (hits.length > 0 && hits[0].object.userData && hits[0].object.userData.tipo) {
+    renderer.domElement.style.cursor = 'pointer';
+  } else {
+    renderer.domElement.style.cursor = 'default';
+  }
+}
+
+function onClickCanvas3D(e) {
+  const container = document.getElementById('view-3d');
+  if (!container) return;
+  const r = container.getBoundingClientRect();
+  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(gruppoCapannone.children, true);
+
+  if (hits.length === 0) {
+    deseleziona();
+    return;
+  }
+
+  const obj = hits[0].object;
+  if (obj.userData && obj.userData.tipo) {
+    seleziona(obj);
+  } else {
+    deseleziona();
+  }
+}
+
+function seleziona(obj) {
+  deseleziona();
+
+  elementoSelezionato = obj;
+
+  // Outline: aggiunge un box helper intorno all'oggetto selezionato
+  const box = new THREE.BoxHelper(obj, 0x2563eb);
+  box.material.linewidth = 3;
+  scene.add(box);
+  outlineHelper = box;
+
+  // Notifica UI con i dati dell'elemento
+  window.dispatchEvent(new CustomEvent('cacem:elemento-selezionato', {
+    detail: { elemento: obj.userData }
+  }));
+}
+
+function deseleziona() {
+  if (outlineHelper) {
+    scene.remove(outlineHelper);
+    if (outlineHelper.geometry) outlineHelper.geometry.dispose();
+    if (outlineHelper.material) outlineHelper.material.dispose();
+    outlineHelper = null;
+  }
+  elementoSelezionato = null;
+}
+
+// API per nascondere un elemento
+export function nascondiElemento(tipo, id) {
+  if (!gruppoCapannone) return;
+  gruppoCapannone.traverse(obj => {
+    if (obj.userData && obj.userData.tipo === tipo && obj.userData.id === id) {
+      obj.visible = false;
+    }
+  });
+  deseleziona();
+}
+
+// API per deselezionare da fuori
+export function deselezionaTutto() {
+  deseleziona();
 }

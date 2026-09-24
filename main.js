@@ -21,7 +21,9 @@ import {
   vistaTop,
   vistaFront,
   vistaLato,
-  toggleWireframe
+  toggleWireframe,
+  nascondiElemento,
+  deselezionaTutto
 } from './scena3d.js';
 
 import {
@@ -207,6 +209,9 @@ async function avvia() {
 
   window.attivaEditor = attivaEditor;
 }
+
+window.CACEM_nascondiElemento = nascondiElemento;
+window.CACEM_deselezionaTutto = deselezionaTutto;
 
 window.addEventListener('cacem:state-change', (e) => {
   const s = e.detail && e.detail.stato;
