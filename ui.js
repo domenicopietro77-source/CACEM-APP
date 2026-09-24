@@ -137,13 +137,49 @@ export function apriCommessaE(id) {
   renderUI();
   collegaListener();
   notificaCambio();
+  window.dispatchEvent(new CustomEvent('cacem:editor-open', { detail: { stato: c.stato } }));
 }
 
 export function nuovaCommessaE() {
-  const nome = prompt('Nome nuova commessa:', 'Capannone ' + new Date().toLocaleDateString('it-IT'));
-  if (!nome || !nome.trim()) return;
+  const modale = document.getElementById('modale-commessa');
+  const input = document.getElementById('modale-input-nome');
+  const btnOk = document.getElementById('modale-btn-ok');
+  const btnAnnulla = document.getElementById('modale-btn-annulla');
 
-  const c = creaCommessa(nome.trim(), statoDefault());
+  if (!modale || !input) {
+    console.warn('Modale commessa non trovata');
+    return;
+  }
+
+  const dataOdierna = new Date().toLocaleDateString('it-IT');
+  input.value = 'Capannone ' + dataOdierna;
+  modale.style.display = 'flex';
+  setTimeout(() => input.focus(), 50);
+
+  const chiudi = () => {
+    modale.style.display = 'none';
+    btnOk.onclick = null;
+    btnAnnulla.onclick = null;
+    input.onkeydown = null;
+  };
+
+  const conferma = () => {
+    const nome = input.value.trim();
+    if (!nome) return;
+    chiudi();
+    creaEapri(nome);
+  };
+
+  btnOk.onclick = conferma;
+  btnAnnulla.onclick = chiudi;
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') conferma();
+    if (e.key === 'Escape') chiudi();
+  };
+}
+
+function creaEapri(nome) {
+  const c = creaCommessa(nome, statoDefault());
   setStato(c.stato);
 
   const schermataEl = $('schermata-commesse');
@@ -156,7 +192,9 @@ export function nuovaCommessaE() {
 
   renderUI();
   collegaListener();
-  notificaCambio();
+
+  // Notifica al main.js di attivare l'editor
+  window.dispatchEvent(new CustomEvent('cacem:editor-open', { detail: { stato: c.stato } }));
 }
 
 export function salvaCommessaCorrente() {

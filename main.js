@@ -206,4 +206,15 @@ async function avvia() {
   window.attivaEditor = attivaEditor;
 }
 
+window.addEventListener('cacem:editor-open', (e) => {
+  const stato = e.detail && e.detail.stato;
+  setTimeout(() => {
+    try {
+      attivaEditor(stato);
+    } catch (err) {
+      console.warn('Errore attivazione editor:', err.message);
+    }
+  }, 100);
+});
+
 avvia();
