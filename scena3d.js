@@ -22,7 +22,7 @@ const COLORI = {
   solaio: 0xb8b4a8,
   carroponte: 0x4a5a7a,
   terreno: 0x4a5058,
-  sfondo: 0x2a2f3a,
+  sfondo: 0xe8eaed,
   griglia: 0x4a5560
 };
 
