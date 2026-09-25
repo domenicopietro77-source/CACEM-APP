@@ -1,12 +1,7 @@
-// modello.js — Stato capannone + logica misure esterne → interne
+// modello.js — Stato capannone CACEM (v8 - struttura reale)
 
-import { trovaTrave, trovaTegolo } from './catalogo.js';
+const CHIAVE = 'cacem-stato-v8';
 
-const CHIAVE = 'cacem-stato-v7';
-
-/**
- * Stato di default.
- */
 export function statoDefault() {
   return {
     commessa: {
@@ -15,288 +10,479 @@ export function statoDefault() {
       dataCreazione: null,
       dataModifica: null
     },
+
+    // ============================================================
+    // MISURE ESTERNE (input utente)
+    // ============================================================
     misureEsterne: {
-      lunghezza: 60,
-      larghezza: 30,
-      spessorePannello: 20,
-      tolleranza: 1,
-      spessoreTotale: 21
+      lunghezza: 60,          // m
+      larghezza: 30,          // m
+      spessorePannello: 20,   // cm (20, 24, 28)
+      tolleranza: 1,          // cm (1 per 20/24, 2 per 28)
+      spessoreTotale: 21      // cm
     },
+
+    // ============================================================
+    // MISURE INTERNE (calcolate)
+    // ============================================================
     misureInterne: {
-      lunghezza: 59.58,
-      larghezza: 29.58
+      lunghezza: 59.58,       // m (60 - 0.42)
+      larghezza: 29.58        // m (30 - 0.42)
     },
-    campate: {
-      verso: 'X',
-      numero: 4,
-      interasse: 14.895,
+
+    // ============================================================
+    // ALTEZZE (in cm, quote in m per livelli)
+    // ============================================================
+    altezze: {
+      impostaPannello: -0.10, // m
+      estradossoPannello: 6.20, // m
+      altezzaPilastro: 6.30,  // m
+      moduloPannelloVert: 450, // cm
+      finestraPiccola: 250,   // cm
+      portaPiccola: 220       // cm
+    },
+
+    // ============================================================
+    // GRIGLIA PILASTRI (file X e Y)
+    // ============================================================
+    pilastri: {
+      // Numero colonne lungo X (in base a campate)
+      numColonneX: 4,
+      // Numero file lungo Y (auto in base a interasse max 6.30 m)
+      numFileY: 5,
+      autoFileY: true,
+      interasseMaxY: 6.30,    // m
+
+      // Dimensioni pilastro
+      base: 70,               // cm
+      altezzaSezione: 70,     // cm
+
+      // Pluviale
+      pluviale: true,
+      pluvialeDiametro: 160,  // mm
+
+      // Fondazione
+      tipoFondazione: 'bicchiere',
+      tipoBicchiere: 'bicchiere_laterale',
+
+      // Boccole M24 (dipendono dalla trave in testa - calcolate per pilastro)
+      boccolePerPilastro: 'auto'
+    },
+
+    // ============================================================
+    // CAMPATE LUNGO X (divise per tegolo AL max 25 m)
+    // ============================================================
+    campateX: {
+      auto: true,
+      numero: 3,
+      maxLuceTegolo: 25,      // m
       lista: [
-        { id: 1, interasse: 14.895 },
-        { id: 2, interasse: 14.895 },
-        { id: 3, interasse: 14.895 },
-        { id: 4, interasse: 14.895 }
+        { id: 1, interasse: 19.86 },  // m
+        { id: 2, interasse: 19.86 },
+        { id: 3, interasse: 19.86 }
       ]
     },
-    generale: {
-      altezzaPilastro: 6,
-      pendenzaCopertura: 5,
-      interpiano: false,
-      interpianoLivelli: 1,
-      interpianoH1: 4,
-      interpianoH2: 4,
-      interpianoSolaio: 'TT80',
-      carroponte: false,
-      portataCarroponte: 10,
-      altezzaEstradossoCarroponte: 5,
-      edificioEsistente: null,
-      lucePilastroCentrale: 15
+
+    // ============================================================
+    // TRAVI BANCHINA (TU) — laterali
+    // ============================================================
+    traviTU: {
+      tipo: 'TU',
+      base: 70,               // cm
+      altezza: 80,            // cm
+      // Segmenti calcolati automaticamente (uno per campata X)
+      segmenti: []
     },
 
+    // ============================================================
+    // TRAVI INTERNE (TI) — file interne
+    // ============================================================
+    traviTI: {
+      attive: true,
+      tipo: 'TI',
+      base: 50,               // cm (anima centrale 10 + ali 20+20)
+      altezza: 90,            // cm
+      segmenti: []
+    },
+
+    // ============================================================
+    // COPERTURA — TEGOLI AL
+    // ============================================================
     copertura: {
       tipo: 'AL',
-      tegoloId: 'AL'
+      tegolo: {
+        id: 'AL',
+        larghezza: 256,       // cm
+        altezza: 88,          // cm
+        basePiana: 65,        // cm
+        spessore: 3           // cm
+      },
+      coppella: {
+        id: 'LAMIERA',
+        tipo: 'lamiera',
+        larghezza: 100,       // mm
+        altezza: 40           // mm
+      },
+      pendenza: 5,            // %
+      // File tegoli calcolate automaticamente
+      file: []
     },
 
-    travi: {
-      banchina: 'TNL',
-      centraleAttiva: true,
-      centrale: 'TI'
+    // ============================================================
+    // PANNELLI TAMPONAMENTO (moduli configurabili)
+    // ============================================================
+    pannelli: {
+      spessore: 20,           // cm
+      finitura: 'FV',         // FV | GR
+      granigliaTipo: 2,       // 1 | 2
+      coloriGraniglia: ['#d9d2c5', '#b8b0a0'],
+      percentualiGraniglia: [70, 30],
+      moduloStandard: 255,    // cm
+
+      lati: {
+        sud: {
+          attivo: true,
+          tipo: 'V',
+          // I moduli si inseriscono come array (dal tecnico)
+          moduli: [
+            { id: 'M1', larghezza: 21, tipo: 'bordo' },
+            { id: 'M2', larghezza: 255, tipo: 'standard' },
+            { id: 'M3', larghezza: 255, tipo: 'standard' }
+          ],
+          aperture: []
+        },
+        est: { attivo: true, tipo: 'V', moduli: [], aperture: [] },
+        nord: { attivo: true, tipo: 'V', moduli: [], aperture: [] },
+        ovest: { attivo: true, tipo: 'V', moduli: [], aperture: [] }
+      }
     },
 
-    pilastri: {
-      base: 40,
-      altezzaSezione: 40,
-      pluviale: true,
-      pluvialeDiametro: 100,
-      tipoFondazione: 'bicchiere',
-      tipoBicchiere: 'bicchiere_laterale'
+    // ============================================================
+    // INTERPIANO
+    // ============================================================
+    interpiano: {
+      attivo: false,
+      numLivelli: 1,
+      h1: 4,                  // m
+      h2: 4,                  // m
+      tipoSolaio: 'TT80'
     },
 
+    // ============================================================
+    // CARROPONTE
+    // ============================================================
+    carroponte: {
+      attivo: false,
+      portata: 10,            // t
+      altezzaEstradosso: 5    // m
+    },
+
+    // ============================================================
+    // ANCORAGGI CACEM
+    // ============================================================
+    ancoraggi: {
+      pannelloTrave: {
+        tipo: 'halfen-baionetta',
+        elementi: [
+          'Halfen nel pannello',
+          'Halfen nella trave/tegolo',
+          'Gruppo fissaggio (baionetta 35x8)',
+          'CP 50x35x8 foro 17',
+          'Dado M16',
+          'Rondella Grower 17',
+          'Vite HS 40/22 M16x50'
+        ],
+        minFissaggi: 2,
+        resistenza: 950         // daN
+      },
+      traveTUPilastro: {
+        tipo: 'm24-boccola-neoprene',
+        elementi: ['Barre M24 cl. 8.8', 'Getto cemento', 'Neoprene']
+      },
+      traveTIPilastro: {
+        tipo: 'm24-boccola-neoprene',
+        elementi: ['Barre M24 cl. 8.8', 'Boccola ancorata', 'Neoprene']
+      },
+      tegoloALTrave: {
+        tipo: 'scat-fisher-neoprene',
+        elementi: ['SCAT 60x30', 'Fisher in opera', 'Neoprene']
+      }
+    },
+
+    // ============================================================
+    // GRAFICA
+    // ============================================================
+    grafica: {
+      stile: 'autocad-bn',    // nero su bianco
+      unitaLunghezze: 'cm',   // quote in cm
+      unitaLivelli: 'm',      // livelli in m
+      fontTitoli: 'italic-serif',
+      tratteggioCls: 'incrociato',
+      strutturaDietroPannelli: 'tratteggiata'
+    },
+
+    // ============================================================
+    // LISTINO PREZZI
+    // ============================================================
     listino: {
-      fondazioni: 280,
+      fondazioni: 280,        // €/m³
       pilastri: 320,
-      travi: 390,
+      traviTU: 390,
+      traviTI: 400,
       tegoli: 420,
       pannelli: 350,
       solaio: 300,
-      coppelle: 28
+      coppelle: 28,           // €/ml
+      graniglia: 15           // €/m²
     },
-    pannelli: {
-      tipo: 'V',
-      spessore: 20,
-      finitura: 'FV',
-      coloriGraniglia: ['#d9d2c5', '#b8b0a0'],
-      percentualiGraniglia: [70, 30],
-      lati: {
-        sud:   { attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] },
-        est:   { attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] },
-        nord:  { attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] },
-        ovest: { attivo: true, posizione: 'esterno', offset: 6, altezze: [], aperture: [] }
-      }
-    },
-    meta: {
-      versione: '7.0',
-      timestamp: null
-    }
+
+    meta: { versione: '8.0', timestamp: null }
   };
 }
 
-/**
- * Clona stato in modo profondo.
- */
-export function clonaStato(s) {
-  return JSON.parse(JSON.stringify(s));
+export function clonaStato(s) { return JSON.parse(JSON.stringify(s)); }
+
+// ----------------------------------------------------------------
+// CALCOLI
+// ----------------------------------------------------------------
+
+export function calcolaTolleranza(sp) {
+  return Number(sp) === 28 ? 2 : 1;
 }
 
-/**
- * Calcola la tolleranza in base allo spessore pannello:
- * - 20 cm → 1 cm
- * - 24 cm → 1 cm
- * - 28 cm → 2 cm
- */
-export function calcolaTolleranza(spessorePannello) {
-  if (Number(spessorePannello) === 28) return 2;
-  return 1;
-}
-
-/**
- * Calcola le misure interne dall'esterno e dai pannelli.
- * Modifica lo stato in-place e ritorna le misure interne.
- */
 export function calcolaMisureInterne(stato) {
   const me = stato.misureEsterne;
-  const tolleranza = calcolaTolleranza(me.spessorePannello);
-  const spessoreTotale = Number(me.spessorePannello) + tolleranza;
-  const spessoreTotaleM = spessoreTotale / 100;
-
-  const lunghezzaInterna = Number(me.lunghezza) - (spessoreTotaleM * 2);
-  const larghezzaInterna = Number(me.larghezza) - (spessoreTotaleM * 2);
-
-  me.tolleranza = tolleranza;
-  me.spessoreTotale = spessoreTotale;
-
-  stato.misureInterne.lunghezza = Math.round(lunghezzaInterna * 1000) / 1000;
-  stato.misureInterne.larghezza = Math.round(larghezzaInterna * 1000) / 1000;
-
+  const toll = calcolaTolleranza(me.spessorePannello);
+  const spTot = Number(me.spessorePannello) + toll;
+  const spM = spTot / 100;
+  me.tolleranza = toll;
+  me.spessoreTotale = spTot;
+  stato.misureInterne.lunghezza = Math.round((me.lunghezza - spM * 2) * 1000) / 1000;
+  stato.misureInterne.larghezza = Math.round((me.larghezza - spM * 2) * 1000) / 1000;
   return stato.misureInterne;
 }
 
-/**
- * Calcola l'interasse delle campate in base al verso.
- */
-export function calcolaInterasse(stato) {
-  const mi = stato.misureInterne;
-  const c = stato.campate;
-  const dimensione = c.verso === 'Y' ? mi.larghezza : mi.lunghezza;
-  const interasse = dimensione / Number(c.numero);
+export function lunghezzaTotale(stato) {
+  return stato.campateX.lista.reduce((a, c) => a + Number(c.interasse), 0);
+}
 
-  c.interasse = Math.round(interasse * 1000) / 1000;
-  c.lista = [];
-  for (let i = 0; i < Number(c.numero); i++) {
-    c.lista.push({ id: i + 1, interasse: c.interasse });
+export function luceTrasversale(stato) {
+  return stato.misureInterne.larghezza;
+}
+
+// Divide campate X in N uguali (o auto in base a tegolo AL max 25 m)
+export function dividiCampateX(stato) {
+  const mi = stato.misureInterne;
+  let n = stato.campateX.numero;
+  if (stato.campateX.auto) {
+    n = Math.ceil(mi.lunghezza / stato.campateX.maxLuceTegolo);
+    if (n < 1) n = 1;
+    stato.campateX.numero = n;
+  }
+  const inter = mi.lunghezza / n;
+  stato.campateX.lista = [];
+  for (let i = 0; i < n; i++) {
+    stato.campateX.lista.push({
+      id: i + 1,
+      interasse: Math.round(inter * 1000) / 1000
+    });
+  }
+  return stato.campateX.lista;
+}
+
+// Calcola file pilastri Y in base a larghezza / interasse max
+export function calcolaFileY(stato) {
+  if (!stato.pilastri.autoFileY) return stato.pilastri.numFileY;
+  const W = stato.misureInterne.larghezza;
+  const max = stato.pilastri.interasseMaxY;
+  let n = Math.ceil(W / max) + 1;
+  if (n < 2) n = 2;
+  stato.pilastri.numFileY = n;
+  return n;
+}
+
+// ----------------------------------------------------------------
+// TRAVI
+// ----------------------------------------------------------------
+
+// Segmenti travi TU (2 lati, uno per campata X)
+export function calcolaTraviTU(stato) {
+  const W = stato.misureInterne.larghezza;
+  const n = stato.campateX.numero;
+  const segs = [];
+
+  [{ lato: 'ovest', y: 0 }, { lato: 'est', y: W }].forEach(cfg => {
+    let acc = 0;
+    for (let i = 0; i < n; i++) {
+      const inter = stato.campateX.lista[i].interasse;
+      segs.push({
+        id: 'TU-' + (cfg.lato === 'ovest' ? 'O' : 'E') + (i + 1),
+        lato: cfg.lato,
+        y: cfg.y,
+        x1: acc,
+        x2: acc + inter,
+        lunghezza: inter
+      });
+      acc += inter;
+    }
+  });
+  stato.traviTU.segmenti = segs;
+  return segs;
+}
+
+// Segmenti travi TI (file interne, uno per campata X)
+export function calcolaTraviTI(stato) {
+  if (!stato.traviTI.attive) { stato.traviTI.segmenti = []; return []; }
+  const W = stato.misureInterne.larghezza;
+  const n = stato.campateX.numero;
+  const numFile = stato.pilastri.numFileY;
+  const segs = [];
+
+  // File interne (escludi y=0 e y=W)
+  for (let k = 1; k < numFile - 1; k++) {
+    const y = (k * W) / (numFile - 1);
+    let acc = 0;
+    for (let i = 0; i < n; i++) {
+      const inter = stato.campateX.lista[i].interasse;
+      segs.push({
+        id: 'TI' + k + '-' + (i + 1),
+        fila: k,
+        y: y,
+        x1: acc,
+        x2: acc + inter,
+        lunghezza: inter
+      });
+      acc += inter;
+    }
+  }
+  stato.traviTI.segmenti = segs;
+  return segs;
+}
+
+// ----------------------------------------------------------------
+// TEGOLI AL
+// ----------------------------------------------------------------
+
+// File tegoli paralleli a X (uno per ogni interasse tra travi)
+export function calcolaTegoli(stato) {
+  const W = stato.misureInterne.larghezza;
+  const L = stato.misureInterne.lunghezza;
+  const largTeg = stato.copertura.tegolo.larghezza / 100;
+  const numFile = Math.ceil(W / largTeg);
+  const file = [];
+
+  for (let i = 0; i < numFile; i++) {
+    const y1 = i * largTeg;
+    const y2 = Math.min((i + 1) * largTeg, W);
+    file.push({
+      id: 'AL' + (i + 1),
+      y1: y1,
+      y2: y2,
+      larghezza: y2 - y1,
+      lunghezza: L,
+      halfen: 7,
+      scat: 4
+    });
+  }
+  stato.copertura.file = file;
+  return file;
+}
+
+// ----------------------------------------------------------------
+// PANNELLI — utility
+// ----------------------------------------------------------------
+
+// Genera moduli pannelli per un lato (modulo standard 255 cm)
+export function generaModuliPannelli(lunghezzaLato, moduloStd) {
+  const modM = moduloStd / 100;
+  const nMod = Math.floor(lunghezzaLato / modM);
+  const resto = lunghezzaLato - nMod * modM;
+  const moduli = [];
+
+  // Bordo iniziale
+  moduli.push({ id: 'B1', larghezza: 21, tipo: 'bordo' });
+
+  // Moduli standard
+  for (let i = 0; i < nMod; i++) {
+    moduli.push({ id: 'M' + (i + 1), larghezza: moduloStd, tipo: 'standard' });
   }
 
-  return c.interasse;
+  // Bordo finale
+  moduli.push({ id: 'B2', larghezza: 21, tipo: 'bordo' });
+
+  return moduli;
 }
 
-/**
- * Lunghezza totale del capannone lungo l'asse delle campate.
- */
-export function lunghezzaTotale(stato) {
-  return stato.campate.lista.reduce((a, c) => a + Number(c.interasse || 0), 0);
-}
+// ----------------------------------------------------------------
+// CALCOLO DERIVATI (volumi, pesi)
+// ----------------------------------------------------------------
 
-/**
- * Luce trasversale (larghezza dell'arcareccio).
- */
-export function luceTrasversale(stato) {
-  return stato.campate.verso === 'Y'
-    ? stato.misureInterne.lunghezza
-    : stato.misureInterne.larghezza;
-}
-
-/**
- * Calcolo derivati: geometria, volumi, pesi.
- */
 export function calcolaDerivati(stato) {
-  const g = stato.generale;
   const L = lunghezzaTotale(stato);
   const W = luceTrasversale(stato);
-  const H = g.altezzaPilastro;
-  const salita = (W / 2) * (g.pendenzaCopertura / 100);
-  const Hcolmo = H + salita;
+  const H = stato.altezze.altezzaPilastro;
+  const numFile = stato.pilastri.numFileY;
+  const numPerFila = stato.campateX.numero + 1;
+  const numPilastri = numPerFila * numFile;
 
-  const numPerFila = Number(stato.campate.numero) + 1;
-  const numPilastri = numPerFila * 2;
+  // Pilastri
+  const baseP = stato.pilastri.base / 100;
+  const altP = stato.pilastri.altezzaSezione / 100;
+  const volPil = baseP * altP * H * numPilastri;
 
-  const baseP = (stato.pilastri.base || 40) / 100;
-  const altP = (stato.pilastri.altezzaSezione || 40) / 100;
-  const volPilastri = baseP * altP * H * numPilastri;
+  // Travi TU
+  const segsTU = stato.traviTU.segmenti;
+  const tuB = stato.traviTU.base / 100;
+  const tuA = stato.traviTU.altezza / 100;
+  const volTU = segsTU.reduce((s, x) => s + x.lunghezza, 0) * tuB * tuA;
 
-  const tra = trovaTrave(stato.travi.banchina) || { base: 40, altezza: 60 };
-  const altTraveM = (tra.altezza || 60) / 100;
-  const baseTraveM = (tra.base || 40) / 100;
-  const volTraveBanchina = L * baseTraveM * altTraveM * 2;
+  // Travi TI
+  const segsTI = stato.traviTI.segmenti;
+  const tiB = stato.traviTI.base / 100;
+  const tiA = stato.traviTI.altezza / 100;
+  const volTI = segsTI.reduce((s, x) => s + x.lunghezza, 0) * tiB * tiA;
 
-  const lungFalda = Math.sqrt(Math.pow(W / 2, 2) + Math.pow(salita, 2));
-  const numTraviTrasv = Number(stato.campate.numero) * 2;
-  const volTraviTrasv = lungFalda * baseTraveM * altTraveM * numTraviTrasv;
+  // Tegoli
+  const tegH = stato.copertura.tegolo.altezza / 100;
+  const file = stato.copertura.file;
+  const volTeg = file.reduce((s, f) => s + f.larghezza * f.lunghezza, 0) * tegH;
 
-  const teg = trovaTegolo(stato.copertura.tegoloId) || { larghezza: 250, altezza: 12 };
-  const numTegoliPerFalda = Math.ceil(L / ((teg.larghezza || 250) / 100));
-  const numTegoli = numTegoliPerFalda * 2;
-  const volTegoli = ((teg.larghezza || 250) / 100) * ((teg.altezza || 12) / 100) * lungFalda * numTegoli;
-
-  const spPannM = stato.pannelli.spessore / 100;
+  // Pannelli
+  const spPann = stato.pannelli.spessore / 100;
   const perimetro = 2 * (L + W);
-  const volPannelli = perimetro * H * spPannM;
+  const volPan = perimetro * H * spPann;
 
-  let volInterpiano = 0;
-  if (g.interpiano) volInterpiano = L * W * 0.25;
-
+  // Fondazioni
   const largFond = Math.max(baseP * 1.8, 0.8);
-  const volFondazioni = largFond * largFond * 0.8 * numPilastri;
+  const volFond = largFond * largFond * 0.8 * numPilastri;
 
-  const volTotale = volPilastri + volTraveBanchina + volTraviTrasv +
-                    volTegoli + volPannelli + volInterpiano + volFondazioni;
-  const pesoStimato = volTotale * 2.5;
+  const volTot = volPil + volTU + volTI + volTeg + volPan + volFond;
+  const peso = volTot * 2.5;
 
   return {
-    L: L, W: W, H: H, Hcolmo: Hcolmo, salita: salita,
+    L: L, W: W, H: H,
     numPilastri: numPilastri,
     numPerFila: numPerFila,
-    numTegoli: numTegoli,
-    lungFalda: lungFalda,
+    numFile: numFile,
     superficieCoperta: L * W,
-    volumeTotale: volTotale,
-    pesoStimato: pesoStimato,
+    volumeTotale: volTot,
+    pesoStimato: peso,
     volumi: {
-      pilastri: volPilastri,
-      traveBanchina: volTraveBanchina,
-      traviTrasversali: volTraviTrasv,
-      tegoli: volTegoli,
-      pannelli: volPannelli,
-      interpiano: volInterpiano,
-      fondazioni: volFondazioni,
-      totale: volTotale
+      pilastri: volPil,
+      traviTU: volTU,
+      traviTI: volTI,
+      tegoli: volTeg,
+      pannelli: volPan,
+      fondazioni: volFond,
+      totale: volTot
     }
   };
 }
 
-/**
- * Classifica i pilastri in sigle PP1, PP2, PP3...
- * Pilastri con stesse caratteristiche → stesso PP.
- */
-export function classificaPilastri(stato) {
-  const W = stato.misureInterne.larghezza;
-  const c = stato.campate;
-  const pilastri = [];
+// ----------------------------------------------------------------
+// SALVATAGGIO
+// ----------------------------------------------------------------
 
-  const car = (tipoPos) => JSON.stringify({
-    posizione: tipoPos,
-    pluviale: tipoPos === 'angolo' ? stato.pilastri.pluviale : false,
-    fondazione: tipoPos === 'angolo' ? stato.pilastri.fondazione : 'bicchiere_centrale',
-    mensole: (stato.generale.carroponte && tipoPos === 'intermedio_lungo') ? 'carroponte' : 'nessuna',
-    sezione: stato.pilastri.base + 'x' + stato.pilastri.altezzaSezione
-  });
-
-  const mappa = new Map();
-  let contatore = 1;
-
-  const assegna = (x, y, tipoPos) => {
-    const chiave = car(tipoPos);
-    if (!mappa.has(chiave)) {
-      mappa.set(chiave, 'PP' + contatore);
-      contatore++;
-    }
-    return { x: x, y: y, sigla: mappa.get(chiave), tipoPos: tipoPos };
-  };
-
-  const numPerFila = Number(c.numero) + 1;
-
-  let accX = 0;
-  for (let i = 0; i < numPerFila; i++) {
-    const tipoPos = (i === 0 || i === numPerFila - 1) ? 'angolo' : 'intermedio_lungo';
-    pilastri.push(assegna(accX, 0, tipoPos));
-    if (i < Number(c.numero)) accX += c.lista[i].interasse;
-  }
-
-  accX = 0;
-  for (let i = 0; i < numPerFila; i++) {
-    const tipoPos = (i === 0 || i === numPerFila - 1) ? 'angolo' : 'intermedio_lungo';
-    pilastri.push(assegna(accX, W, tipoPos));
-    if (i < Number(c.numero)) accX += c.lista[i].interasse;
-  }
-
-  return {
-    pilastri: pilastri,
-    mappa: Array.from(mappa.entries())
-  };
-}
-
-/**
- * Salva lo stato su localStorage.
- */
 export function salvaStato(s) {
   const copia = clonaStato(s);
   copia.meta.timestamp = new Date().toISOString();
@@ -304,33 +490,16 @@ export function salvaStato(s) {
   return copia;
 }
 
-/**
- * Carica lo stato da localStorage.
- */
 export function caricaStato() {
   const raw = localStorage.getItem(CHIAVE);
   if (!raw) return null;
-  try {
-    const p = JSON.parse(raw);
-    if (!p.misureEsterne || !p.campate) return null;
-    return p;
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(raw); } catch { return null; }
 }
 
-/**
- * Cancella lo stato salvato (per reset).
- */
 export function cancellaStato() {
   localStorage.removeItem(CHIAVE);
-  localStorage.removeItem('cacem-stato-v6');
-  localStorage.removeItem('cacem-stato-v5');
 }
 
-/**
- * Esporta lo stato in JSON stringa.
- */
 export function esportaJSON(s) {
   return JSON.stringify(s, null, 2);
 }
