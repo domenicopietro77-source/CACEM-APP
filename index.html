@@ -18,9 +18,7 @@
       <button id="btn-nuova-commessa" class="btn btn-primary">+ Nuova commessa</button>
     </div>
   </header>
-
   <div id="commesse-lista" class="commesse-lista"></div>
-
   <div id="commesse-vuote" class="commesse-vuote" style="display:none;">
     <div class="vuoto-icona">📁</div>
     <p>Nessuna commessa presente</p>
@@ -30,7 +28,6 @@
 
 <!-- ============ EDITOR ============ -->
 <div id="schermata-editor" class="schermata" style="display:none;">
-
   <header class="topbar">
     <div class="logo-cacem">CACEM</div>
     <div class="breadcrumb">
@@ -45,10 +42,7 @@
   </header>
 
   <main class="layout">
-
-    <!-- ========== COLONNA SINISTRA ========== -->
     <aside class="panel panel-left">
-
       <h2>Misure esterne</h2>
       <label>Lunghezza esterna (m)
         <input type="number" id="ext-lunghezza" step="0.1" min="5" max="200" value="60">
@@ -77,16 +71,6 @@
       </div>
 
       <h2>Copertura</h2>
-      <label>Tipo copertura
-        <select id="copertura-tipo">
-          <option value="AL">AL — Alari</option>
-        </select>
-      </label>
-      <label>Trave banchina
-        <select id="trave-banchina">
-          <option value="TU">TU — Trave a U</option>
-        </select>
-      </label>
       <label>Pendenza copertura (%)
         <input type="number" id="pendenza-copertura" min="3" max="20" step="0.5" value="5">
       </label>
@@ -190,12 +174,9 @@
       <label>Portata (t)
         <input type="number" id="carroponte-portata" min="1" max="50" step="1" value="10">
       </label>
-
     </aside>
 
-    <!-- ========== COLONNA CENTRALE ========== -->
     <section class="viewport">
-
       <nav class="tabs">
         <button class="tab active" data-view="3d">3D</button>
         <button class="tab" data-view="pianta">Pianta</button>
@@ -213,9 +194,7 @@
             <button class="btn" id="btn-lato">Lato</button>
           </div>
         </div>
-        <div id="view-pianta" class="view">
-          <canvas id="piantaCanvas"></canvas>
-        </div>
+        <div id="view-pianta" class="view"><canvas id="piantaCanvas"></canvas></div>
         <div id="view-prospetto" class="view view-prospetti">
           <div class="prospetti-grid">
             <div class="prospetto-box"><canvas id="prospetto1"></canvas></div>
@@ -233,6 +212,8 @@
         <div id="view-distinta" class="view view-distinta">
           <div class="distinta-toolbar">
             <button class="btn" id="btn-export-csv">Esporta CSV</button>
+            <button class="btn" id="btn-export-dxf-pianta">DXF Pianta</button>
+            <button class="btn" id="btn-export-dxf-sezioni">DXF Sezioni</button>
             <button class="btn" id="btn-export-json">JSON Progetto</button>
           </div>
           <div class="distinta-scroll">
@@ -240,7 +221,7 @@
               <thead>
                 <tr>
                   <th>Famiglia</th><th>Elemento</th><th>Tipo</th><th>Qtà</th>
-                  <th>Dimensioni</th><th>Volume (m³)</th><th>Peso (t)</th>
+                  <th>Dimensioni</th><th>Volume (m³)</th><th>Peso (t)</th><th>Prezzo (€)</th>
                 </tr>
               </thead>
               <tbody id="distintaBody"></tbody>
@@ -250,7 +231,6 @@
       </div>
     </section>
 
-    <!-- ========== COLONNA DESTRA ========== -->
     <aside class="panel panel-right">
       <h2>Risultati</h2>
       <div class="stat"><span class="stat-label">Lunghezza tot.</span><span class="stat-value" id="rLunghezza">—</span></div>
@@ -260,14 +240,12 @@
       <div class="stat"><span class="stat-label">Numero pilastri</span><span class="stat-value" id="rPilastri">—</span></div>
       <div class="status" id="status">Pronto</div>
     </aside>
-
   </main>
 
   <footer class="footer">
     <span>CACEM · Configuratore v9</span>
     <span id="footer-status">Pronto</span>
   </footer>
-
 </div>
 
 <script type="importmap">

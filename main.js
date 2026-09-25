@@ -1,4 +1,4 @@
-// main.js — Orchestratore CACEM v9
+// main.js — Orchestratore CACEM v9 (integrato)
 
 import { caricaCataloghi } from './catalogo.js';
 import {
@@ -11,7 +11,29 @@ import {
   getStato
 } from './ui.js';
 
+import {
+  inizializzaRenderer3D,
+  aggiornaRenderer3D,
+  resizeRenderer3D,
+  vistaIso,
+  vistaTop,
+  vistaFront,
+  vistaLato
+} from './renderer3d.js';
+
+import {
+  inizializzaViste2D,
+  aggiornaViste2D
+} from './viste2d.js';
+
+import { aggiornaDistinta, esportaCSV } from './distinta.js';
+import { esportaPiantaDXF, esportaSezioniDXF, esportaJSON } from './export.js';
+
 let editorInizializzato = false;
+
+/* ============================================================
+   COLLEGAMENTI
+   ============================================================ */
 
 function collegaSchermataCommesse() {
   const btnNuova = document.getElementById('btn-nuova-commessa');
@@ -41,41 +63,71 @@ function collegaTabs() {
         view.classList.add('active');
         view.style.display = 'block';
       }
-      window.dispatchEvent(new CustomEvent('cacem:view-change', { detail: { view: tab.dataset.view } }));
+      const s = getStato();
+      const v = tab.dataset.view;
+      if (v === '3d') setTimeout(() => { try { resizeRenderer3D(); if (s) aggiornaRenderer3D(s); } catch(e){ console.warn(e); } }, 50);
+      if (v === 'pianta' && s) setTimeout(() => aggiornaViste2D(s), 50);
+      if (v === 'prospetto' && s) setTimeout(() => aggiornaViste2D(s), 50);
+      if (v === 'sezione' && s) setTimeout(() => aggiornaViste2D(s), 50);
+      if (v === 'distinta' && s) setTimeout(() => aggiornaDistinta(s), 50);
     };
   });
 }
 
 function collegaPulsantiEditor() {
   const b = (id) => document.getElementById(id);
+
+  if (b('btn-iso')) b('btn-iso').onclick = () => vistaIso();
+  if (b('btn-top')) b('btn-top').onclick = () => vistaTop();
+  if (b('btn-front')) b('btn-front').onclick = () => vistaFront();
+  if (b('btn-lato')) b('btn-lato').onclick = () => vistaLato();
+
   if (b('btn-export-csv')) b('btn-export-csv').onclick = () => {
     const s = getStato();
-    if (s) console.log('Export CSV:', s);
-    alert('Export CSV: in arrivo nella Fase 7');
+    if (s) esportaCSV(s);
   };
   if (b('btn-export-json')) b('btn-export-json').onclick = () => {
     const s = getStato();
-    if (!s) return;
-    const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'cacem-progetto.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    if (s) esportaJSON(s);
+  };
+  if (b('btn-export-dxf-pianta')) b('btn-export-dxf-pianta').onclick = () => {
+    const s = getStato();
+    if (s) esportaPiantaDXF(s);
+  };
+  if (b('btn-export-dxf-sezioni')) b('btn-export-dxf-sezioni').onclick = () => {
+    const s = getStato();
+    if (s) esportaSezioniDXF(s);
   };
 }
 
+/* ============================================================
+   ATTIVA EDITOR
+   ============================================================ */
+
 export function attivaEditor(statoIniziale) {
   if (!editorInizializzato) {
+    try { inizializzaRenderer3D(); } catch (e) { console.warn('3D init:', e.message); }
+    try { inizializzaViste2D(); } catch (e) { console.warn('2D init:', e.message); }
     collegaTabs();
     collegaPulsantiEditor();
+    window.addEventListener('resize', () => {
+      try { resizeRenderer3D(); } catch (e) {}
+    });
     editorInizializzato = true;
   }
+
   const s = statoIniziale || getStato();
   if (!s) return;
+
+  try { aggiornaRenderer3D(s); } catch (e) { console.warn('3D:', e.message); }
+  try { aggiornaViste2D(s); } catch (e) { console.warn('2D:', e.message); }
   try { aggiornaRisultati(s); } catch (e) { console.warn('Risultati:', e.message); }
+  try { aggiornaDistinta(s); } catch (e) { console.warn('Distinta:', e.message); }
 }
+
+/* ============================================================
+   AVVIO
+   ============================================================ */
 
 async function avvia() {
   try {
@@ -89,13 +141,16 @@ async function avvia() {
 
   window.addEventListener('cacem:editor-open', (e) => {
     const stato = e.detail && e.detail.stato;
-    setTimeout(() => attivaEditor(stato), 100);
+    setTimeout(() => attivaEditor(stato), 150);
   });
 
   window.addEventListener('cacem:state-change', (e) => {
     const s = e.detail && e.detail.stato;
     if (!s) return;
-    try { aggiornaRisultati(s); } catch (err) { console.warn(err.message); }
+    try { aggiornaRenderer3D(s); } catch (err) {}
+    try { aggiornaViste2D(s); } catch (err) {}
+    try { aggiornaRisultati(s); } catch (err) {}
+    try { aggiornaDistinta(s); } catch (err) {}
   });
 
   window.attivaEditor = attivaEditor;
