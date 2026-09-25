@@ -1,96 +1,27 @@
 [
   {
-    "id": "TL",
-    "nome": "Trave a L",
-    "tipo": "L",
-    "base": 50,
-    "altezza": 75,
-    "baseL": 32,
-    "altezzaGamba": 30,
-    "altezzaGambaVariabile": true,
-    "luceMax": 12,
-    "categoria": "banchina"
-  },
-  {
-    "id": "TLQ",
-    "nome": "Trave L quadro",
-    "tipo": "LQ",
-    "base": 58,
-    "altezza": 80,
-    "baseL": 50,
-    "altezzaGamba": 30,
-    "altezzaGambaVariabile": true,
-    "luceMax": 12,
-    "categoria": "banchina"
-  },
-  {
-    "id": "TLS",
-    "nome": "Trave L speciale",
-    "tipo": "LS",
-    "base": 78,
-    "altezza": 95,
-    "baseL": 20,
-    "altezzaGamba": 30,
-    "altezzaGambaVariabile": true,
-    "luceMax": 14,
-    "categoria": "banchina"
-  },
-  {
-    "id": "TD",
-    "nome": "Trave doppia T",
-    "tipo": "doppiaT",
-    "base": 86,
-    "altezza": 75,
-    "aliLaterali": 18,
-    "luceMax": 14,
-    "categoria": "trasversale"
-  },
-  {
-    "id": "TDR",
-    "nome": "Trave doppia T ribassata",
-    "tipo": "doppiaT",
-    "base": 86,
-    "altezza": 55,
-    "aliLaterali": 18,
-    "luceMax": 12,
-    "categoria": "trasversale"
-  },
-  {
     "id": "TU",
-    "nome": "Trave a U canale",
-    "tipo": "canale",
-    "base": 70,
-    "altezza": 80,
-    "luceMax": 15,
-    "categoria": "trasversale"
-  },
-  {
-    "id": "TNL",
-    "nome": "Trave T nuova linea",
-    "tipo": "T",
-    "base": 78,
-    "altezza": 95,
-    "luceMax": 12,
-    "categoria": "trasversale"
+    "nome": "Trave TU (canale)",
+    "tipo": "U",
+    "base": 700,
+    "altezza": 800,
+    "ali": 160,
+    "interasseInterno": 380,
+    "basePiena": 170,
+    "luceMax": 1000,
+    "categoria": "banchina",
+    "note": "Trave banchina laterale a U — halfen ogni 255mm, foro Ø180+Ø80 per pluviale e ancoraggio"
   },
   {
     "id": "TI",
-    "nome": "Trave a I",
+    "nome": "Trave TI (I)",
     "tipo": "I",
-    "base": 100,
-    "altezza": 140,
-    "anima": 80,
-    "aliLaterali": 10,
-    "luceMax": 16,
-    "categoria": "trasversale"
-  },
-  {
-    "id": "TY",
-    "nome": "Trave a Y",
-    "tipo": "Y",
-    "base": 112,
-    "altezza": 100,
-    "luceMax": 15,
-    "categoria": "trasversale"
+    "base": 500,
+    "altezza": 900,
+    "anima": 100,
+    "ali": 200,
+    "luceMax": 1000,
+    "categoria": "interna",
+    "note": "Trave interna a I — halfen ogni 255mm, 2 fori Ø80 per barre M24"
   }
 ]

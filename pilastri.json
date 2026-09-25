@@ -1,53 +1,13 @@
 [
   {
-    "id": "P30x30",
-    "nome": "Pilastro 30×30",
-    "sezione": { "l": 300, "h": 300 },
-    "pluvialeDiametro": 80,
-    "pluvialeCentrato": true,
-    "altezzeStd": [4000, 5000, 6000, 7000, 8000],
-    "fondazioneDefault": "bicchiere",
-    "categoria": "leggero"
-  },
-  {
-    "id": "P40x40",
-    "nome": "Pilastro 40×40",
-    "sezione": { "l": 400, "h": 400 },
-    "pluvialeDiametro": 100,
-    "pluvialeCentrato": true,
-    "altezzeStd": [4000, 5000, 6000, 7000, 8000, 9000, 10000],
-    "fondazioneDefault": "bicchiere",
-    "categoria": "standard"
-  },
-  {
-    "id": "P40x60",
-    "nome": "Pilastro 40×60",
-    "sezione": { "l": 400, "h": 600 },
-    "pluvialeDiametro": 100,
-    "pluvialeCentrato": true,
-    "altezzeStd": [6000, 7000, 8000, 9000, 10000, 11000, 12000],
-    "fondazioneDefault": "bicchiere",
-    "categoria": "medio"
-  },
-  {
-    "id": "P50x50",
-    "nome": "Pilastro 50×50",
-    "sezione": { "l": 500, "h": 500 },
-    "pluvialeDiametro": 120,
-    "pluvialeCentrato": true,
-    "altezzeStd": [6000, 7000, 8000, 9000, 10000, 11000, 12000],
-    "fondazioneDefault": "bicchiere",
-    "categoria": "medio"
-  },
-  {
-    "id": "P60x60",
-    "nome": "Pilastro 60×60",
-    "sezione": { "l": 600, "h": 600 },
+    "id": "PP70x70",
+    "nome": "Pilastro CACEM 70×70",
+    "sezione": { "l": 700, "h": 700 },
+    "altezzeStd": [580, 630, 730, 830],
     "pluvialeDiametro": 160,
     "pluvialeCentrato": true,
-    "altezzeStd": [6000, 7000, 8000, 9000, 10000, 11000, 12000],
-    "fondazioneDefault": "bicchiere_pluviale",
-    "categoria": "pesante",
-    "note": "Misure CACEM ufficiale - pluviale Ø160 centrato"
+    "fondazioneDefault": "bicchiere_laterale",
+    "categoria": "CACEM",
+    "note": "Pilastro portante prefabbricato CACEM con pluviale Ø160 centrato"
   }
 ]
