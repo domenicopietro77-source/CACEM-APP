@@ -1,0 +1,46 @@
+[
+  {
+    "id": "GRANDE",
+    "nome": "Coppella cemento grande",
+    "tipo": "cemento",
+    "forma": "curva",
+    "passo": 3300,
+    "larghezza": 3310,
+    "altezza": 150,
+    "categoria": "grande",
+    "note": "Coppella curva in cemento per copertura con passo 330 cm"
+  },
+  {
+    "id": "PICCOLA",
+    "nome": "Coppella cemento piccola",
+    "tipo": "cemento",
+    "forma": "curva",
+    "passo": 2820,
+    "larghezza": 2830,
+    "altezza": 150,
+    "categoria": "piccola",
+    "note": "Coppella curva in cemento per copertura con passo 282 cm"
+  },
+  {
+    "id": "LAMIERA",
+    "nome": "Coppella lamiera",
+    "tipo": "lamiera",
+    "forma": "curva",
+    "passo": 1000,
+    "larghezza": 1000,
+    "altezza": 40,
+    "categoria": "leggera",
+    "note": "Coppella in lamiera zincata preverniciata"
+  },
+  {
+    "id": "LAMIERA-PIANA",
+    "nome": "Coppella lamiera piana",
+    "tipo": "lamiera",
+    "forma": "piana",
+    "passo": 1000,
+    "larghezza": 1000,
+    "altezza": 30,
+    "categoria": "leggera",
+    "note": "Coppella piana in lamiera"
+  }
+]

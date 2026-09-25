@@ -1,0 +1,38 @@
+[
+  {
+    "id": "MS",
+    "nome": "Mensola solaio",
+    "tipo": "solaio",
+    "base": 350,
+    "spessore": 100,
+    "altezzaGancio": 400,
+    "altezzaTotale": 500,
+    "profonditaVariabile": true,
+    "categoria": "solaio",
+    "note": "Mensola per appoggio solai TT/LL su travi"
+  },
+  {
+    "id": "MT",
+    "nome": "Mensola trave",
+    "tipo": "trave",
+    "base": 350,
+    "spessore": 100,
+    "altezzaGancio": 600,
+    "altezzaTotale": 700,
+    "profonditaVariabile": true,
+    "categoria": "trave",
+    "note": "Mensola per appoggio travi TU/TI su pilastri"
+  },
+  {
+    "id": "MC",
+    "nome": "Mensola carroponte",
+    "tipo": "carroponte",
+    "base": 400,
+    "spessore": 100,
+    "altezzaGancio": 600,
+    "altezzaTotale": 700,
+    "profonditaVariabile": true,
+    "categoria": "carroponte",
+    "note": "Mensola per appoggio trave carroponte"
+  }
+]

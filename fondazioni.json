@@ -1,0 +1,57 @@
+{
+  "descrizione": "Sistemi di fondazione CACEM",
+  "tipi": [
+    {
+      "id": "bicchiere_laterale",
+      "nome": "Bicchiere laterale",
+      "tipo": "bicchiere",
+      "pluviale": true,
+      "sboccoPluviale": true,
+      "dimensioni": {
+        "base": 1500,
+        "altezza": 1700,
+        "spessoreParete": 200
+      },
+      "note": "Bicchiere con sbocco pluviale laterale"
+    },
+    {
+      "id": "bicchiere_pluviale",
+      "nome": "Bicchiere con pluviale",
+      "tipo": "bicchiere",
+      "pluviale": true,
+      "sboccoPluviale": false,
+      "dimensioni": {
+        "base": 1500,
+        "altezza": 1700,
+        "spessoreParete": 200
+      },
+      "note": "Bicchiere con pluviale passante interno"
+    },
+    {
+      "id": "bicchiere_centrale",
+      "nome": "Bicchiere centrale",
+      "tipo": "bicchiere",
+      "pluviale": false,
+      "sboccoPluviale": false,
+      "dimensioni": {
+        "base": 1500,
+        "altezza": 1700,
+        "spessoreParete": 200
+      },
+      "note": "Bicchiere centrale senza pluviale"
+    },
+    {
+      "id": "armatubo",
+      "nome": "Armatubo",
+      "tipo": "armatubo",
+      "pluviale": false,
+      "sboccoPluviale": false,
+      "dimensioni": {
+        "base": 800,
+        "altezza": 1200,
+        "diametro": 800
+      },
+      "note": "Fondazione a tubo in c.a. con armatura a gabbia"
+    }
+  ]
+}
