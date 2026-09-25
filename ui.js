@@ -1,10 +1,17 @@
-// ui.js — Gestione UI editor + schermata commesse
+// ui.js — Gestione UI editor + schermata commesse (CACEM v8)
 
 import {
   statoDefault,
   calcolaMisureInterne,
-  calcolaInterasse,
+  dividiCampateX,
+  calcolaFileY,
+  calcolaTraviTU,
+  calcolaTraviTI,
+  calcolaTegoli,
+  generaModuliPannelli,
   calcolaDerivati,
+  lunghezzaTotale,
+  luceTrasversale,
   salvaStato
 } from './modello.js';
 
@@ -23,7 +30,6 @@ import {
   importaCommessa
 } from './commesse.js';
 
-import { catalogo } from './catalogo.js';
 import { aggiornaDistinta } from './distinta.js';
 
 const $ = (id) => document.getElementById(id);
@@ -31,10 +37,7 @@ const $ = (id) => document.getElementById(id);
 let stato = null;
 let onChange = () => {};
 
-export function getStato() {
-  return stato;
-}
-
+export function getStato() { return stato; }
 export function setStato(s) {
   stato = s;
   window.CACEM_STATE = s;
@@ -63,7 +66,7 @@ export function mostraSchermataCommesse() {
   if (vuoteEl) vuoteEl.style.display = 'none';
 
   if (listaEl) {
-    listaEl.innerHTML = lista.map(c => (
+    listaEl.innerHTML = lista.map(c =>
       '<div class="commessa-card" data-id="' + c.id + '">' +
         '<h3>' + escapeHtml(c.nome) + '</h3>' +
         '<div class="meta">Modificata: ' + formatData(c.dataModifica) + '</div>' +
@@ -74,7 +77,7 @@ export function mostraSchermataCommesse() {
           '<button class="btn btn-danger" data-action="elimina" data-id="' + c.id + '">Elimina</button>' +
         '</div>' +
       '</div>'
-    )).join('');
+    ).join('');
 
     listaEl.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -90,48 +93,17 @@ export function mostraSchermataCommesse() {
 }
 
 function gestisciAzione(azione, id) {
-  if (azione === 'apri') {
-    apriCommessaE(id);
-    return;
-  }
-
+  if (azione === 'apri') { apriCommessaE(id); return; }
   if (azione === 'rinomina') {
     const c = getCommessa(id);
     if (!c) return;
-    rinominaConModale(id, c.nome);
+    const nuovo = prompt('Nuovo nome:', c.nome);
+    if (nuovo && nuovo.trim()) { rinominaCommessa(id, nuovo.trim()); mostraSchermataCommesse(); }
     return;
   }
-
-  if (azione === 'duplica') {
-    duplicaCommessa(id);
-    mostraSchermataCommesse();
-    return;
-  }
-
+  if (azione === 'duplica') { duplicaCommessa(id); mostraSchermataCommesse(); return; }
   if (azione === 'elimina') {
-    const c = getCommessa(id);
-    if (!c) return;
-    const modale = document.getElementById('modale-elimina');
-    const nomeEl = document.getElementById('modale-elimina-nome');
-    const btnOk = document.getElementById('modale-elimina-ok');
-    const btnAnnulla = document.getElementById('modale-elimina-annulla');
-
-    if (!modale) return;
-    if (nomeEl) nomeEl.textContent = c.nome;
-    modale.style.display = 'flex';
-
-    const chiudi = () => {
-      modale.style.display = 'none';
-      btnOk.onclick = null;
-      btnAnnulla.onclick = null;
-    };
-
-    btnOk.onclick = () => {
-      chiudi();
-      eliminaCommessa(id);
-      mostraSchermataCommesse();
-    };
-    btnAnnulla.onclick = chiudi;
+    if (confirm('Eliminare questa commessa?')) { eliminaCommessa(id); mostraSchermataCommesse(); }
     return;
   }
 }
@@ -140,15 +112,9 @@ export function apriCommessaE(id) {
   const c = apriCommessa(id);
   if (!c) return;
   setStato(c.stato);
-
-  const schermataEl = $('schermata-commesse');
-  const editorEl = $('schermata-editor');
-  if (schermataEl) schermataEl.style.display = 'none';
-  if (editorEl) editorEl.style.display = 'flex';
-
-  const nomeEl = $('commessa-nome');
-  if (nomeEl) nomeEl.textContent = c.nome;
-
+  $('schermata-commesse').style.display = 'none';
+  $('schermata-editor').style.display = 'flex';
+  $('commessa-nome').textContent = c.nome;
   renderUI();
   collegaListener();
   notificaCambio();
@@ -156,59 +122,23 @@ export function apriCommessaE(id) {
 }
 
 export function nuovaCommessaE() {
-  const modale = document.getElementById('modale-commessa');
-  const input = document.getElementById('modale-input-nome');
-  const btnOk = document.getElementById('modale-btn-ok');
-  const btnAnnulla = document.getElementById('modale-btn-annulla');
-
-  if (!modale || !input) {
-    console.warn('Modale commessa non trovata');
-    return;
-  }
-
-  const dataOdierna = new Date().toLocaleDateString('it-IT');
-  input.value = 'Capannone ' + dataOdierna;
-  modale.style.display = 'flex';
-  setTimeout(() => input.focus(), 50);
-
-  const chiudi = () => {
-    modale.style.display = 'none';
-    btnOk.onclick = null;
-    btnAnnulla.onclick = null;
-    input.onkeydown = null;
-  };
-
-  const conferma = () => {
-    const nome = input.value.trim();
-    if (!nome) return;
-    chiudi();
-    creaEapri(nome);
-  };
-
-  btnOk.onclick = conferma;
-  btnAnnulla.onclick = chiudi;
-  input.onkeydown = (e) => {
-    if (e.key === 'Enter') conferma();
-    if (e.key === 'Escape') chiudi();
-  };
-}
-
-function creaEapri(nome) {
-  const c = creaCommessa(nome, statoDefault());
+  const nome = prompt('Nome nuova commessa:', 'Capannone ' + new Date().toLocaleDateString('it-IT'));
+  if (!nome || !nome.trim()) return;
+  const c = creaCommessa(nome.trim(), statoDefault());
   setStato(c.stato);
-
-  const schermataEl = $('schermata-commesse');
-  const editorEl = $('schermata-editor');
-  if (schermataEl) schermataEl.style.display = 'none';
-  if (editorEl) editorEl.style.display = 'flex';
-
-  const nomeEl = $('commessa-nome');
-  if (nomeEl) nomeEl.textContent = c.nome;
-
+  $('schermata-commesse').style.display = 'none';
+  $('schermata-editor').style.display = 'flex';
+  $('commessa-nome').textContent = c.nome;
+  // Calcola subito tutto
+  calcolaMisureInterne(stato);
+  dividiCampateX(stato);
+  calcolaFileY(stato);
+  calcolaTraviTU(stato);
+  calcolaTraviTI(stato);
+  calcolaTegoli(stato);
   renderUI();
   collegaListener();
-
-  // Notifica al main.js di attivare l'editor
+  notificaCambio();
   window.dispatchEvent(new CustomEvent('cacem:editor-open', { detail: { stato: c.stato } }));
 }
 
@@ -231,11 +161,8 @@ export function importaCommessaDaFile() {
   input.onchange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    importaCommessa(file).then(() => {
-      mostraSchermataCommesse();
-    }).catch(err => {
-      alert('Errore importazione: ' + err.message);
-    });
+    importaCommessa(file).then(() => mostraSchermataCommesse())
+      .catch(err => alert('Errore: ' + err.message));
   };
   input.click();
 }
@@ -258,7 +185,6 @@ function notificaCambio() {
   if (typeof onChange === 'function') onChange(stato);
   salvaStato(stato);
   aggiornaStatoCommessa(stato);
-  // NOTIFICA TUTTI I MODULI VISIVI
   window.dispatchEvent(new CustomEvent('cacem:state-change', { detail: { stato: stato } }));
 }
 
@@ -268,122 +194,100 @@ function notificaCambio() {
 
 export function renderUI() {
   if (!stato) return;
-
   const me = stato.misureEsterne;
   const mi = stato.misureInterne;
-  const c = stato.campate;
-  const g = stato.generale;
+  const cx = stato.campateX;
   const p = stato.pilastri;
-  const pann = stato.pannelli;
+  const a = stato.altezze;
+  const pan = stato.pannelli;
+  const cop = stato.copertura;
 
+  // Misure esterne
   setVal('ext-lunghezza', me.lunghezza);
   setVal('ext-larghezza', me.larghezza);
   setSelect('ext-spessore-pannello', String(me.spessorePannello), [
-    { value: '20', label: '20 + 1 cm tolleranza' },
-    { value: '24', label: '24 + 1 cm tolleranza' },
-    { value: '28', label: '28 + 2 cm tolleranza' }
+    { value: '20', label: '20 + 1 cm' },
+    { value: '24', label: '24 + 1 cm' },
+    { value: '28', label: '28 + 2 cm' }
   ]);
-
   setTxt('info-lung-interna', mi.lunghezza.toFixed(2));
   setTxt('info-larg-interna', mi.larghezza.toFixed(2));
 
-  setSelect('campate-verso', c.verso, [
-    { value: 'X', label: 'Lungo X (lunghezza)' },
-    { value: 'Y', label: 'Lungo Y (larghezza)' }
+  // Campate X
+  setSelect('campate-verso', 'X', [
+    { value: 'X', label: 'Lungo X (lunghezza)' }
   ]);
-  setVal('campate-numero', c.numero);
-  setTxt('info-interasse', c.interasse.toFixed(3));
+  setVal('campate-numero', cx.numero);
+  setTxt('info-interasse', cx.lista[0] ? cx.lista[0].interasse.toFixed(3) : '—');
 
-  setSelect('copertura-tipo', stato.copertura.tipo, [
-    { value: 'AL', label: 'AL — Alari' },
-    { value: 'Y', label: 'Y' },
-    { value: 'TT', label: 'TT' }
+  // Copertura
+  setSelect('copertura-tipo', cop.tipo, [
+    { value: 'AL', label: 'AL — Alari' }
   ]);
+  setSelect('trave-banchina', 'TU', [
+    { value: 'TU', label: 'TU — Trave a U (banchina)' }
+  ]);
+  setVal('pendenza-copertura', cop.pendenza);
 
-  popolaSelectTravi();
-  setVal('trave-banchina', stato.travi.banchina);
-  setVal('trave-trasversale', stato.travi.trasversale);
+  // Altezze
+  setVal('altezza-pilastro', a.altezzaPilastro);
+  setVal('modulo-pannello-vert', a.moduloPannelloVert);
+  setVal('finestra-piccola', a.finestraPiccola);
+  setVal('porta-piccola', a.portaPiccola);
 
+  // Pilastri
   setVal('pilastro-base', p.base);
   setVal('pilastro-alt-sezione', p.altezzaSezione);
-  setVal('pilastro-altezza', g.altezzaPilastro);
+  setVal('pilastro-file-y', p.numFileY);
+  setChk('pilastro-auto-file-y', p.autoFileY);
+  setVal('pilastro-interasse-max', p.interasseMaxY);
   setChk('pilastro-pluviale', p.pluviale);
   setVal('pilastro-pluviale-diametro', p.pluvialeDiametro);
-  popolaSelectFondazioni();
-  setVal('pilastro-fondazione', p.fondazione);
-
-  setVal('pannello-finitura', pann.finitura);
-  setVal('graniglia-colore-1', pann.coloriGraniglia[0]);
-  setVal('graniglia-colore-2', pann.coloriGraniglia[1]);
-  setVal('graniglia-perc-1', pann.percentualiGraniglia[0]);
-
-  setChk('extra-interpiano', g.interpiano);
-  setChk('extra-carroponte', g.carroponte);
-  setSelect('trave-banchina', stato.travi.banchina, [
-    { value: 'TU', label: 'TU — Trave a U canale' },
-    { value: 'TNL', label: 'TNL — Trave T nuova linea' }
-  ]);
-  setSelect('trave-centrale', stato.travi.centrale, [
-    { value: 'TI', label: 'TI — Trave a I' }
-  ]);
-  setSelect('pilastro-tipo-fondazione', stato.pilastri.tipoFondazione, [
+  setSelect('pilastro-tipo-fondazione', p.tipoFondazione, [
     { value: 'bicchiere', label: 'Bicchiere' },
     { value: 'armatubo', label: 'Armatubo' }
   ]);
-  setSelect('pilastro-tipo-bicchiere', stato.pilastri.tipoBicchiere, [
+  setSelect('pilastro-tipo-bicchiere', p.tipoBicchiere, [
     { value: 'bicchiere_laterale', label: 'Laterale con pluviale' },
     { value: 'bicchiere_pluviale', label: 'Con pluviale' },
     { value: 'bicchiere_centrale', label: 'Centrale senza pluviale' }
   ]);
-  setVal('extra-interpiano', stato.generale.interpiano);
-  setVal('interpiano-livelli', stato.generale.interpianoLivelli);
-  setVal('interpiano-h1', stato.generale.interpianoH1);
-  setVal('interpiano-h2', stato.generale.interpianoH2);
-  setVal('interpiano-solaio', stato.generale.interpianoSolaio);
-  setVal('extra-carroponte', stato.generale.carroponte);
-  setVal('carroponte-portata', stato.generale.portataCarroponte);
-  setVal('carroponte-altezza', stato.generale.altezzaEstradossoCarroponte);
-  setVal('pendenza-copertura', stato.generale.pendenzaCopertura);
-  setVal('graniglia-tipo', stato.pannelli.granigliaTipo);
-  setVal('graniglia-colore-1', stato.pannelli.coloriGraniglia[0]);
-  setVal('graniglia-colore-2', stato.pannelli.coloriGraniglia[1]);
-  setVal('graniglia-perc-1', stato.pannelli.percentualiGraniglia[0]);
-  setVal('graniglia-perc-2', stato.pannelli.percentualiGraniglia[1]);
 
-  const bloccoG = document.getElementById('blocco-graniglia');
-  if (bloccoG) {
-    bloccoG.style.display = stato.pannelli.finitura === 'GR' ? 'block' : 'none';
-  }
-  const labelC2 = document.getElementById('label-colore-2');
-  const labelP2 = document.getElementById('label-perc-2');
-  const mostra2 = stato.pannelli.granigliaTipo === 2;
+  // Pannelli
+  setSelect('pannello-finitura', pan.finitura, [
+    { value: 'FV', label: 'Faccia vista' },
+    { value: 'GR', label: 'Granigliato' }
+  ]);
+  setSelect('graniglia-tipo', String(pan.granigliaTipo), [
+    { value: '1', label: '1 colore' },
+    { value: '2', label: '2 colori miscelati' }
+  ]);
+  setVal('graniglia-colore-1', pan.coloriGraniglia[0]);
+  setVal('graniglia-colore-2', pan.coloriGraniglia[1]);
+  setVal('graniglia-perc-1', pan.percentualiGraniglia[0]);
+  setVal('graniglia-perc-2', pan.percentualiGraniglia[1]);
+  setVal('modulo-pannello-std', pan.moduloStandard);
+
+  // Visibilità blocchi
+  const blocG = $('blocco-graniglia');
+  if (blocG) blocG.style.display = (pan.finitura === 'GR') ? 'block' : 'none';
+  const labelC2 = $('label-colore-2');
+  const labelP2 = $('label-perc-2');
+  const mostra2 = pan.granigliaTipo === 2;
   if (labelC2) labelC2.style.display = mostra2 ? 'flex' : 'none';
   if (labelP2) labelP2.style.display = mostra2 ? 'flex' : 'none';
 
-  const l = stato.listino || {};
-  setVal('listino-fondazioni', l.fondazioni);
-  setVal('listino-pilastri', l.pilastri);
-  setVal('listino-travi', l.travi);
-  setVal('listino-tegoli', l.tegoli);
-  setVal('listino-pannelli', l.pannelli);
-  setVal('listino-solaio', l.solaio);
-  setVal('listino-coppelle', l.coppelle);
-}
+  // Interpiano
+  setChk('extra-interpiano', stato.interpiano.attivo);
+  setVal('interpiano-livelli', stato.interpiano.numLivelli);
+  setVal('interpiano-h1', stato.interpiano.h1);
+  setVal('interpiano-h2', stato.interpiano.h2);
+  setVal('interpiano-solaio', stato.interpiano.tipoSolaio);
 
-function popolaSelectTravi() {
-  const lista = Array.isArray(catalogo.travi) ? catalogo.travi : [];
-  const opts = lista.map(t => '<option value="' + t.id + '">' + t.id + ' — ' + (t.nome || '') + '</option>').join('');
-  const b = $('trave-banchina');
-  const t = $('trave-trasversale');
-  if (b) b.innerHTML = opts;
-  if (t) t.innerHTML = opts;
-}
-
-function popolaSelectFondazioni() {
-  const lista = (catalogo.fondazioni && catalogo.fondazioni.tipi) || [];
-  const opts = lista.map(f => '<option value="' + f.id + '">' + f.nome + '</option>').join('');
-  const s = $('pilastro-fondazione');
-  if (s) s.innerHTML = opts;
+  // Carroponte
+  setChk('extra-carroponte', stato.carroponte.attivo);
+  setVal('carroponte-portata', stato.carroponte.portata);
+  setVal('carroponte-altezza', stato.carroponte.altezzaEstradosso);
 }
 
 /* ============================================================
@@ -396,79 +300,80 @@ function collegaListener() {
   if (listenerCollegati) return;
   listenerCollegati = true;
 
+  // Misure esterne
   bindNum('ext-lunghezza', v => {
     stato.misureEsterne.lunghezza = v;
     calcolaMisureInterne(stato);
-    calcolaInterasse(stato);
+    dividiCampateX(stato);
+    calcolaFileY(stato);
+    calcolaTraviTU(stato);
+    calcolaTraviTI(stato);
+    calcolaTegoli(stato);
     notificaCambio();
   });
-
   bindNum('ext-larghezza', v => {
     stato.misureEsterne.larghezza = v;
     calcolaMisureInterne(stato);
-    calcolaInterasse(stato);
+    calcolaFileY(stato);
+    calcolaTraviTU(stato);
+    calcolaTraviTI(stato);
+    calcolaTegoli(stato);
     notificaCambio();
   });
-
   bindSel('ext-spessore-pannello', v => {
     stato.misureEsterne.spessorePannello = parseInt(v, 10);
     stato.pannelli.spessore = parseInt(v, 10);
     calcolaMisureInterne(stato);
-    calcolaInterasse(stato);
+    dividiCampateX(stato);
     notificaCambio();
   });
 
-  bindSel('campate-verso', v => {
-    stato.campate.verso = v;
-    calcolaInterasse(stato);
-    notificaCambio();
-  });
-
+  // Campate
   bindNum('campate-numero', v => {
-    stato.campate.numero = Math.max(1, Math.floor(v));
-    calcolaInterasse(stato);
+    stato.campateX.numero = Math.max(1, Math.floor(v));
+    stato.campateX.auto = false;
+    dividiCampateX(stato);
+    calcolaTraviTU(stato);
+    calcolaTraviTI(stato);
     notificaCambio();
   });
 
-  bindSel('copertura-tipo', v => {
-    stato.copertura.tipo = v;
-    stato.copertura.tegoloId = v;
-    notificaCambio();
-  });
+  // Copertura
+  bindNum('pendenza-copertura', v => { stato.copertura.pendenza = v; notificaCambio(); });
 
-  bindSel('trave-banchina', v => { stato.travi.banchina = v; notificaCambio(); });
-  bindSel('trave-trasversale', v => { stato.travi.trasversale = v; notificaCambio(); });
+  // Altezze
+  bindNum('altezza-pilastro', v => { stato.altezze.altezzaPilastro = v; notificaCambio(); });
+  bindNum('modulo-pannello-vert', v => { stato.altezze.moduloPannelloVert = v; notificaCambio(); });
+  bindNum('finestra-piccola', v => { stato.altezze.finestraPiccola = v; notificaCambio(); });
+  bindNum('porta-piccola', v => { stato.altezze.portaPiccola = v; notificaCambio(); });
 
+  // Pilastri
   bindNum('pilastro-base', v => { stato.pilastri.base = v; notificaCambio(); });
   bindNum('pilastro-alt-sezione', v => { stato.pilastri.altezzaSezione = v; notificaCambio(); });
-  bindNum('pilastro-altezza', v => { stato.generale.altezzaPilastro = v; notificaCambio(); });
-  bindChk('pilastro-pluviale', v => { stato.pilastri.pluviale = v; notificaCambio(); });
-  bindSel('pilastro-pluviale-diametro', v => { stato.pilastri.pluvialeDiametro = parseInt(v, 10); notificaCambio(); });
-  bindSel('pilastro-fondazione', v => { stato.pilastri.fondazione = v; notificaCambio(); });
-
-  bindSel('pannello-finitura', v => { stato.pannelli.finitura = v; notificaCambio(); });
-  bindColor('graniglia-colore-1', v => { stato.pannelli.coloriGraniglia[0] = v; notificaCambio(); });
-  bindColor('graniglia-colore-2', v => { stato.pannelli.coloriGraniglia[1] = v; notificaCambio(); });
-  bindNum('graniglia-perc-1', v => {
-    stato.pannelli.percentualiGraniglia[0] = v;
-    stato.pannelli.percentualiGraniglia[1] = 100 - v;
+  bindNum('pilastro-file-y', v => {
+    stato.pilastri.numFileY = Math.max(2, Math.floor(v));
+    stato.pilastri.autoFileY = false;
+    calcolaTraviTI(stato);
     notificaCambio();
   });
-
+  bindChk('pilastro-auto-file-y', v => {
+    stato.pilastri.autoFileY = v;
+    if (v) { calcolaFileY(stato); calcolaTraviTI(stato); }
+    notificaCambio();
+  });
+  bindNum('pilastro-interasse-max', v => {
+    stato.pilastri.interasseMaxY = v;
+    if (stato.pilastri.autoFileY) { calcolaFileY(stato); calcolaTraviTI(stato); }
+    notificaCambio();
+  });
+  bindChk('pilastro-pluviale', v => { stato.pilastri.pluviale = v; notificaCambio(); });
+  bindNum('pilastro-pluviale-diametro', v => { stato.pilastri.pluvialeDiametro = v; notificaCambio(); });
   bindSel('pilastro-tipo-fondazione', v => { stato.pilastri.tipoFondazione = v; notificaCambio(); });
   bindSel('pilastro-tipo-bicchiere', v => { stato.pilastri.tipoBicchiere = v; notificaCambio(); });
-  bindSel('trave-centrale', v => { stato.travi.centrale = v; notificaCambio(); });
-  bindChk('trave-centrale-attiva', v => { stato.travi.centraleAttiva = v; notificaCambio(); });
-  bindChk('extra-interpiano', v => { stato.generale.interpiano = v; notificaCambio(); });
-  bindSel('interpiano-livelli', v => { stato.generale.interpianoLivelli = parseInt(v,10); notificaCambio(); });
-  bindNum('interpiano-h1', v => { stato.generale.interpianoH1 = v; notificaCambio(); });
-  bindNum('interpiano-h2', v => { stato.generale.interpianoH2 = v; notificaCambio(); });
-  bindSel('interpiano-solaio', v => { stato.generale.interpianoSolaio = v; notificaCambio(); });
-  bindChk('extra-carroponte', v => { stato.generale.carroponte = v; notificaCambio(); });
-  bindNum('carroponte-portata', v => { stato.generale.portataCarroponte = v; notificaCambio(); });
-  bindNum('carroponte-altezza', v => { stato.generale.altezzaEstradossoCarroponte = v; notificaCambio(); });
-  bindNum('pendenza-copertura', v => { stato.generale.pendenzaCopertura = v; notificaCambio(); });
-  bindSel('graniglia-tipo', v => { stato.pannelli.granigliaTipo = parseInt(v,10); notificaCambio(); });
+
+  // Pannelli
+  bindSel('pannello-finitura', v => { stato.pannelli.finitura = v; notificaCambio(); });
+  bindSel('graniglia-tipo', v => { stato.pannelli.granigliaTipo = parseInt(v, 10); notificaCambio(); });
   bindColor('graniglia-colore-1', v => { stato.pannelli.coloriGraniglia[0] = v; notificaCambio(); });
   bindColor('graniglia-colore-2', v => { stato.pannelli.coloriGraniglia[1] = v; notificaCambio(); });
   bindNum('graniglia-perc-1', v => {
@@ -476,11 +381,26 @@ function collegaListener() {
     stato.pannelli.percentualiGraniglia[1] = 100 - v;
     notificaCambio();
   });
+  bindNum('graniglia-perc-2', v => {
+    stato.pannelli.percentualiGraniglia[1] = v;
+    stato.pannelli.percentualiGraniglia[0] = 100 - v;
+    notificaCambio();
+  });
+  bindNum('modulo-pannello-std', v => { stato.pannelli.moduloStandard = v; notificaCambio(); });
 
-  bindChk('extra-interpiano', v => { stato.generale.interpiano = v; notificaCambio(); });
-  bindChk('extra-carroponte', v => { stato.generale.carroponte = v; notificaCambio(); });
-  bindNum('pendenza-copertura', v => { stato.generale.pendenzaCopertura = v; notificaCambio(); });
+  // Interpiano
+  bindChk('extra-interpiano', v => { stato.interpiano.attivo = v; notificaCambio(); });
+  bindSel('interpiano-livelli', v => { stato.interpiano.numLivelli = parseInt(v, 10); notificaCambio(); });
+  bindNum('interpiano-h1', v => { stato.interpiano.h1 = v; notificaCambio(); });
+  bindNum('interpiano-h2', v => { stato.interpiano.h2 = v; notificaCambio(); });
+  bindSel('interpiano-solaio', v => { stato.interpiano.tipoSolaio = v; notificaCambio(); });
 
+  // Carroponte
+  bindChk('extra-carroponte', v => { stato.carroponte.attivo = v; notificaCambio(); });
+  bindNum('carroponte-portata', v => { stato.carroponte.portata = v; notificaCambio(); });
+  bindNum('carroponte-altezza', v => { stato.carroponte.altezzaEstradosso = v; notificaCambio(); });
+
+  // Torna a commesse
   const btnTorna = $('btn-torna-commesse');
   if (btnTorna) {
     btnTorna.onclick = () => {
@@ -488,99 +408,36 @@ function collegaListener() {
       mostraSchermataCommesse();
     };
   }
-
-  if (!stato.listino) stato.listino = { fondazioni:280, pilastri:320, travi:390, tegoli:420, pannelli:350, solaio:300, coppelle:28 };
-  bindNum('listino-fondazioni', v => { stato.listino.fondazioni = v; notificaCambio(); });
-  bindNum('listino-pilastri', v => { stato.listino.pilastri = v; notificaCambio(); });
-  bindNum('listino-travi', v => { stato.listino.travi = v; notificaCambio(); });
-  bindNum('listino-tegoli', v => { stato.listino.tegoli = v; notificaCambio(); });
-  bindNum('listino-pannelli', v => { stato.listino.pannelli = v; notificaCambio(); });
-  bindNum('listino-solaio', v => { stato.listino.solaio = v; notificaCambio(); });
-  bindNum('listino-coppelle', v => { stato.listino.coppelle = v; notificaCambio(); });
-}
-
-function rinominaConModale(id, nomeAttuale) {
-  const modale = document.getElementById('modale-rinomina');
-  const input = document.getElementById('modale-rinomina-input');
-  const btnOk = document.getElementById('modale-rinomina-ok');
-  const btnAnnulla = document.getElementById('modale-rinomina-annulla');
-
-  if (!modale || !input) return;
-
-  input.value = nomeAttuale;
-  modale.style.display = 'flex';
-  setTimeout(() => input.focus(), 50);
-
-  const chiudi = () => {
-    modale.style.display = 'none';
-    btnOk.onclick = null;
-    btnAnnulla.onclick = null;
-  };
-
-  const conferma = () => {
-    const nuovo = input.value.trim();
-    if (!nuovo) return;
-    chiudi();
-    rinominaCommessa(id, nuovo);
-    mostraSchermataCommesse();
-  };
-
-  btnOk.onclick = conferma;
-  btnAnnulla.onclick = chiudi;
-  input.onkeydown = (e) => {
-    if (e.key === 'Enter') conferma();
-    if (e.key === 'Escape') chiudi();
-  };
 }
 
 /* ============================================================
    HELPER
    ============================================================ */
 
-function setVal(id, v) {
-  const el = $(id);
-  if (el) el.value = (v !== undefined && v !== null) ? v : '';
-}
-
-function setTxt(id, v) {
-  const el = $(id);
-  if (el) el.textContent = v;
-}
-
-function setChk(id, v) {
-  const el = $(id);
-  if (el) el.checked = !!v;
-}
-
+function setVal(id, v) { const el = $(id); if (el) el.value = (v !== undefined && v !== null) ? v : ''; }
+function setTxt(id, v) { const el = $(id); if (el) el.textContent = v; }
+function setChk(id, v) { const el = $(id); if (el) el.checked = !!v; }
 function setSelect(id, valore, opzioni) {
   const el = $(id);
   if (!el) return;
   el.innerHTML = opzioni.map(o => '<option value="' + o.value + '">' + o.label + '</option>').join('');
   el.value = valore;
 }
-
 function bindNum(id, setter) {
   const el = $(id);
   if (!el) return;
-  el.oninput = () => {
-    const v = parseFloat(el.value);
-    if (isNaN(v)) return;
-    setter(v);
-  };
+  el.oninput = () => { const v = parseFloat(el.value); if (!isNaN(v)) setter(v); };
 }
-
 function bindChk(id, setter) {
   const el = $(id);
   if (!el) return;
   el.onchange = () => setter(el.checked);
 }
-
 function bindSel(id, setter) {
   const el = $(id);
   if (!el) return;
   el.onchange = () => setter(el.value);
 }
-
 function bindColor(id, setter) {
   const el = $(id);
   if (!el) return;
@@ -589,11 +446,7 @@ function bindColor(id, setter) {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }
 
@@ -602,9 +455,7 @@ function formatData(iso) {
   try {
     const d = new Date(iso);
     return d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return iso;
-  }
+  } catch { return iso; }
 }
 
 /* ============================================================
@@ -618,68 +469,5 @@ export function aggiornaRisultati(s) {
   setTxt('rVolume', d.volumeTotale.toFixed(2) + ' m³');
   setTxt('rPeso', d.pesoStimato.toFixed(2) + ' t');
   setTxt('rPilastri', d.numPilastri);
-  try {
-    aggiornaDistinta(s);
-  } catch (e) {
-    console.warn('Distinta:', e.message);
-  }
+  try { aggiornaDistinta(s); } catch (e) { console.warn('Distinta:', e.message); }
 }
-
-export function mostraStatus(m) {
-  const el = $('status');
-  if (el) el.textContent = m;
-  const f = $('footer-status');
-  if (f) f.textContent = m;
-}
-
-window.addEventListener('cacem:elemento-selezionato', (e) => {
-  const elemento = e.detail && e.detail.elemento;
-  if (!elemento) return;
-
-  const modale = document.getElementById('modale-elemento');
-  const titolo = document.getElementById('modale-elemento-titolo');
-  const info = document.getElementById('modale-elemento-info');
-  const btnChiudi = document.getElementById('modale-elemento-chiudi');
-  const btnElimina = document.getElementById('modale-elemento-elimina');
-
-  if (!modale) return;
-
-  const etichette = {
-    'pilastro': 'Pilastro',
-    'trave-banchina': 'Trave banchina',
-    'fondazione': 'Fondazione',
-    'pannello': 'Pannello tamponamento',
-    'copertura': 'Falda copertura',
-    'terreno': 'Terreno',
-    'interpiano': 'Interpiano',
-    'carroponte': 'Carroponte'
-  };
-
-  titolo.textContent = etichette[elemento.tipo] || elemento.tipo;
-  info.innerHTML = 
-    '<div>ID: ' + elemento.id + '</div>' +
-    (elemento.lato ? '<div>Lato: ' + elemento.lato + '</div>' : '') +
-    (elemento.falda ? '<div>Falda: ' + elemento.falda + '</div>' : '');
-
-  modale.style.display = 'flex';
-
-  const chiudi = () => {
-    modale.style.display = 'none';
-    // Chiama il deseleziona esterno
-    if (window.CACEM_deselezionaTutto) window.CACEM_deselezionaTutto();
-  };
-
-  btnChiudi.onclick = chiudi;
-  btnElimina.onclick = () => {
-    if (elemento.tipo === 'terreno' || elemento.tipo === 'copertura') {
-      alert('Non puoi eliminare questo elemento.');
-      return;
-    }
-    if (confirm('Eliminare ' + (etichette[elemento.tipo] || elemento.tipo) + '?')) {
-      if (window.CACEM_nascondiElemento) {
-        window.CACEM_nascondiElemento(elemento.tipo, elemento.id);
-      }
-      chiudi();
-    }
-  };
-});
