@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CACEM · Configuratore Capannoni Prefabbricati</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ SCHERMATA COMMESSE ============ -->
+<div id="schermata-commesse" class="schermata">
+  <header class="topbar-commesse">
+    <div class="logo-cacem">CACEM</div>
+    <h1>Le tue commesse</h1>
+    <div class="topbar-actions">
+      <button id="btn-importa-commessa" class="btn">Importa da file</button>
+      <button id="btn-nuova-commessa" class="btn btn-primary">+ Nuova commessa</button>
+    </div>
+  </header>
+
+  <div id="commesse-lista" class="commesse-lista"></div>
+
+  <div id="commesse-vuote" class="commesse-vuote" style="display:none;">
+    <div class="vuoto-icona">📁</div>
+    <p>Nessuna commessa presente</p>
+    <p class="hint">Clicca <strong>+ Nuova commessa</strong> per iniziare</p>
+  </div>
+</div>
+
+<!-- ============ EDITOR ============ -->
+<div id="schermata-editor" class="schermata" style="display:none;">
+
+  <header class="topbar">
+    <div class="logo-cacem">CACEM</div>
+    <div class="breadcrumb">
+      <button id="btn-torna-commesse" class="btn btn-back">← Commesse</button>
+      <span id="commessa-nome" class="commessa-nome">—</span>
+    </div>
+    <div class="topbar-actions">
+      <a href="modellatore.html" class="btn">Modellatore</a>
+      <button id="btn-salva" class="btn">Salva</button>
+      <button id="btn-esporta-commessa" class="btn">Esporta</button>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- ========== COLONNA SINISTRA ========== -->
+    <aside class="panel panel-left">
+
+      <h2>Misure esterne</h2>
+      <label>Lunghezza esterna (m)
+        <input type="number" id="ext-lunghezza" step="0.1" min="5" max="200" value="60">
+      </label>
+      <label>Larghezza esterna (m)
+        <input type="number" id="ext-larghezza" step="0.1" min="5" max="100" value="30">
+      </label>
+      <label>Spessore pannello
+        <select id="ext-spessore-pannello">
+          <option value="20">20 + 1 cm tolleranza</option>
+          <option value="24">24 + 1 cm tolleranza</option>
+          <option value="28">28 + 2 cm tolleranza</option>
+        </select>
+      </label>
+      <div class="info-box">
+        <div>Lunghezza interna: <span id="info-lung-interna">—</span> m</div>
+        <div>Larghezza interna: <span id="info-larg-interna">—</span> m</div>
+      </div>
+
+      <h2>Campate</h2>
+      <label>Numero campate
+        <input type="number" id="campate-numero" min="1" max="20" step="1" value="3">
+      </label>
+      <div class="info-box">
+        <div>Interasse: <span id="info-interasse">—</span> m</div>
+      </div>
+
+      <h2>Copertura</h2>
+      <label>Tipo copertura
+        <select id="copertura-tipo">
+          <option value="AL">AL — Alari</option>
+        </select>
+      </label>
+      <label>Trave banchina
+        <select id="trave-banchina">
+          <option value="TU">TU — Trave a U</option>
+        </select>
+      </label>
+      <label>Pendenza copertura (%)
+        <input type="number" id="pendenza-copertura" min="3" max="20" step="0.5" value="5">
+      </label>
+
+      <h2>Altezze</h2>
+      <label>Altezza pilastro (m)
+        <input type="number" id="altezza-pilastro" min="3" max="15" step="0.1" value="6.30">
+      </label>
+      <label>Modulo pannello verticale (cm)
+        <input type="number" id="modulo-pannello-vert" min="200" max="600" step="10" value="450">
+      </label>
+
+      <h2>Pilastri</h2>
+      <label>Base pilastro (cm)
+        <input type="number" id="pilastro-base" min="20" max="150" step="5" value="70">
+      </label>
+      <label>Altezza sezione (cm)
+        <input type="number" id="pilastro-alt-sezione" min="20" max="150" step="5" value="70">
+      </label>
+      <label class="check">
+        <input type="checkbox" id="pilastro-auto-file-y" checked> File Y automatiche
+      </label>
+      <label>Numero file Y
+        <input type="number" id="pilastro-file-y" min="2" max="20" step="1" value="5">
+      </label>
+      <label>Interasse max Y (m)
+        <input type="number" id="pilastro-interasse-max" min="3" max="12" step="0.1" value="6.30">
+      </label>
+      <label class="check">
+        <input type="checkbox" id="pilastro-pluviale" checked> Pluviale
+      </label>
+      <label>Ø Pluviale (mm)
+        <select id="pilastro-pluviale-diametro">
+          <option value="80">80</option>
+          <option value="100">100</option>
+          <option value="120">120</option>
+          <option value="160" selected>160</option>
+        </select>
+      </label>
+      <label>Tipo fondazione
+        <select id="pilastro-tipo-fondazione">
+          <option value="bicchiere">Bicchiere</option>
+          <option value="armatubo">Armatubo</option>
+        </select>
+      </label>
+      <label>Tipo bicchiere
+        <select id="pilastro-tipo-bicchiere">
+          <option value="bicchiere_laterale">Laterale con pluviale</option>
+          <option value="bicchiere_pluviale">Con pluviale</option>
+          <option value="bicchiere_centrale">Centrale senza pluviale</option>
+        </select>
+      </label>
+
+      <h2>Pannelli</h2>
+      <label>Finitura
+        <select id="pannello-finitura">
+          <option value="FV">Faccia vista</option>
+          <option value="GR">Granigliato</option>
+        </select>
+      </label>
+      <div id="blocco-graniglia" style="display:none;">
+        <label>Tipo graniglia
+          <select id="graniglia-tipo">
+            <option value="1">1 colore</option>
+            <option value="2" selected>2 colori miscelati</option>
+          </select>
+        </label>
+        <label>Colore graniglia 1
+          <input type="color" id="graniglia-colore-1" value="#d9d2c5">
+        </label>
+        <label>% colore 1
+          <input type="number" id="graniglia-perc-1" min="0" max="100" step="5" value="70">
+        </label>
+        <label id="label-colore-2">Colore graniglia 2
+          <input type="color" id="graniglia-colore-2" value="#b8b0a0">
+        </label>
+        <label id="label-perc-2">% colore 2
+          <input type="number" id="graniglia-perc-2" min="0" max="100" step="5" value="30" disabled>
+        </label>
+      </div>
+
+      <h2>Interpiano</h2>
+      <label class="check">
+        <input type="checkbox" id="extra-interpiano"> Interpiano attivo
+      </label>
+      <label>Numero livelli
+        <select id="interpiano-livelli">
+          <option value="1">1 livello</option>
+          <option value="2">2 livelli</option>
+          <option value="3">3 livelli</option>
+        </select>
+      </label>
+      <label>Altezza livello 1 (m)
+        <input type="number" id="interpiano-h1" min="2" max="6" step="0.1" value="4">
+      </label>
+
+      <h2>Carroponte</h2>
+      <label class="check">
+        <input type="checkbox" id="extra-carroponte"> Carroponte attivo
+      </label>
+      <label>Portata (t)
+        <input type="number" id="carroponte-portata" min="1" max="50" step="1" value="10">
+      </label>
+
+    </aside>
+
+    <!-- ========== COLONNA CENTRALE ========== -->
+    <section class="viewport">
+
+      <nav class="tabs">
+        <button class="tab active" data-view="3d">3D</button>
+        <button class="tab" data-view="pianta">Pianta</button>
+        <button class="tab" data-view="prospetto">Prospetti</button>
+        <button class="tab" data-view="sezione">Sezioni</button>
+        <button class="tab" data-view="distinta">Distinta</button>
+      </nav>
+
+      <div class="view-container">
+        <div id="view-3d" class="view active">
+          <div class="view-actions">
+            <button class="btn" id="btn-iso">Iso</button>
+            <button class="btn" id="btn-top">Top</button>
+            <button class="btn" id="btn-front">Front</button>
+            <button class="btn" id="btn-lato">Lato</button>
+          </div>
+        </div>
+        <div id="view-pianta" class="view">
+          <canvas id="piantaCanvas"></canvas>
+        </div>
+        <div id="view-prospetto" class="view view-prospetti">
+          <div class="prospetti-grid">
+            <div class="prospetto-box"><canvas id="prospetto1"></canvas></div>
+            <div class="prospetto-box"><canvas id="prospetto2"></canvas></div>
+            <div class="prospetto-box"><canvas id="prospetto3"></canvas></div>
+            <div class="prospetto-box"><canvas id="prospetto4"></canvas></div>
+          </div>
+        </div>
+        <div id="view-sezione" class="view view-sezioni">
+          <div class="sezioni-grid">
+            <div class="sezione-box"><canvas id="sezioneAA"></canvas></div>
+            <div class="sezione-box"><canvas id="sezioneBB"></canvas></div>
+          </div>
+        </div>
+        <div id="view-distinta" class="view view-distinta">
+          <div class="distinta-toolbar">
+            <button class="btn" id="btn-export-csv">Esporta CSV</button>
+            <button class="btn" id="btn-export-json">JSON Progetto</button>
+          </div>
+          <div class="distinta-scroll">
+            <table id="tabella-distinta">
+              <thead>
+                <tr>
+                  <th>Famiglia</th><th>Elemento</th><th>Tipo</th><th>Qtà</th>
+                  <th>Dimensioni</th><th>Volume (m³)</th><th>Peso (t)</th>
+                </tr>
+              </thead>
+              <tbody id="distintaBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== COLONNA DESTRA ========== -->
+    <aside class="panel panel-right">
+      <h2>Risultati</h2>
+      <div class="stat"><span class="stat-label">Lunghezza tot.</span><span class="stat-value" id="rLunghezza">—</span></div>
+      <div class="stat"><span class="stat-label">Superficie coperta</span><span class="stat-value" id="rSuperficie">—</span></div>
+      <div class="stat"><span class="stat-label">Volume calcestruzzo</span><span class="stat-value" id="rVolume">—</span></div>
+      <div class="stat"><span class="stat-label">Peso totale</span><span class="stat-value" id="rPeso">—</span></div>
+      <div class="stat"><span class="stat-label">Numero pilastri</span><span class="stat-value" id="rPilastri">—</span></div>
+      <div class="status" id="status">Pronto</div>
+    </aside>
+
+  </main>
+
+  <footer class="footer">
+    <span>CACEM · Configuratore v9</span>
+    <span id="footer-status">Pronto</span>
+  </footer>
+
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/dxf-writer@1.18.4/dist/dxf-writer.min.js"></script>
+<script type="module" src="main.js"></script>
+
+</body>
+</html>
