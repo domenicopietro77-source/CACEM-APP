@@ -1,6 +1,9 @@
-// pianta.js — Pianta tecnica in stile AutoCAD (sfondo bianco, linee nere)
+// pianta.js — Pianta tecnica CACEM (stile AutoCAD B/N, quote in cm)
 
-import { lunghezzaTotale, luceTrasversale, classificaPilastri } from './modello.js';
+import {
+  lunghezzaTotale,
+  luceTrasversale
+} from './modello.js';
 
 let canvas = null;
 let ctx = null;
@@ -13,15 +16,19 @@ let userInteracted = false;
 let statoCorrente = null;
 
 const COLORI = {
-  sfondo:       '#ffffff',
-  linea:        '#000000',
-  pilastro:     '#000000',
-  asse:         '#666666',
-  quota:        '#000000',
-  testo:        '#000000',
-  sezione:      '#cc0000',
-  freccia:      '#cc0000',
-  pannello:     '#000000'
+  sfondo: '#ffffff',
+  linea: '#000000',
+  lineaSpessa: '#000000',
+  pilastro: '#000000',
+  traveTU: '#000000',
+  traveTI: '#333333',
+  tegolo: '#666666',
+  asse: '#999999',
+  quota: '#000000',
+  testo: '#000000',
+  sezione: '#cc0000',
+  freccia: '#cc0000',
+  terreno: '#888888'
 };
 
 export function inizializzaPianta(canvasEl) {
@@ -36,18 +43,13 @@ export function inizializzaPianta(canvasEl) {
     userInteracted = true;
     canvas.style.cursor = 'grabbing';
   });
-
   canvas.addEventListener('mousemove', (e) => {
     if (!dragAttivo) return;
     offsetX = e.offsetX - dragStart.x;
     offsetY = e.offsetY - dragStart.y;
     disegna(statoCorrente);
   });
-
-  const stop = () => {
-    dragAttivo = false;
-    canvas.style.cursor = 'grab';
-  };
+  const stop = () => { dragAttivo = false; canvas.style.cursor = 'grab'; };
   canvas.addEventListener('mouseup', stop);
   canvas.addEventListener('mouseleave', stop);
 
@@ -77,10 +79,8 @@ function adattaCanvas() {
   const dpr = window.devicePixelRatio || 1;
   const r = canvas.getBoundingClientRect();
   if (r.width === 0 || r.height === 0) return;
-
   const larghezzaPx = Math.round(r.width * dpr);
   const altezzaPx = Math.round(r.height * dpr);
-
   if (canvas.width !== larghezzaPx || canvas.height !== altezzaPx) {
     canvas.width = larghezzaPx;
     canvas.height = altezzaPx;
@@ -90,25 +90,22 @@ function adattaCanvas() {
   }
 }
 
+function getDimCss() {
+  const dpr = window.devicePixelRatio || 1;
+  return { w: canvas.width / dpr, h: canvas.height / dpr };
+}
+
 function autoFit(stato) {
   if (!stato || !canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const larghezzaCss = canvas.width / dpr;
-  const altezzaCss = canvas.height / dpr;
-
+  const dim = getDimCss();
   const L = lunghezzaTotale(stato);
   const W = luceTrasversale(stato);
-  const offsetP = (stato.pannelli.lati.sud.offset || 6) / 100;
-  const totaleL = L + offsetP * 2;
-  const totaleW = W + offsetP * 2;
-  const margine = 140;
-
-  const scalaX = (larghezzaCss - margine * 2) / totaleL;
-  const scalaY = (altezzaCss - margine * 2) / totaleW;
+  const margine = 160;
+  const scalaX = (dim.w - margine * 2) / L;
+  const scalaY = (dim.h - margine * 2) / W;
   scala = Math.min(scalaX, scalaY);
-
-  offsetX = (larghezzaCss - totaleL * scala) / 2 + offsetP * scala;
-  offsetY = (altezzaCss - totaleW * scala) / 2 + offsetP * scala;
+  offsetX = (dim.w - L * scala) / 2;
+  offsetY = (dim.h - W * scala) / 2 + 20;
 }
 
 function toPx(x, y) {
@@ -124,190 +121,243 @@ export function aggiornaPianta(stato) {
 
 function disegna(stato) {
   if (!canvas || !ctx || !stato) return;
+  const dim = getDimCss();
+  ctx.fillStyle = COLORI.sfondo;
+  ctx.fillRect(0, 0, dim.w, dim.h);
 
   const L = lunghezzaTotale(stato);
   const W = luceTrasversale(stato);
-  const baseP = stato.pilastri.base / 100;
-  const altP = stato.pilastri.altezzaSezione / 100;
-  const offsetP = (stato.pannelli.lati.sud.offset || 6) / 100;
 
-  const dpr = window.devicePixelRatio || 1;
-  ctx.fillStyle = COLORI.sfondo;
-  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-
-  // Titolo
   ctx.fillStyle = COLORI.testo;
   ctx.font = 'italic bold 16px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText('PIANTA PILASTRI E PANNELLI', canvas.width / dpr / 2, 30);
+  ctx.fillText('PIANTA PILASTRI, TRAVI E TEGOLI', dim.w / 2, 28);
 
-  // Pannelli (linee doppie)
-  disegnaPannelli(stato, L, W, offsetP);
-
-  // Contorno
-  ctx.strokeStyle = COLORI.linea;
+  ctx.strokeStyle = COLORI.lineaSpessa;
   ctx.lineWidth = 1.5;
   const c1 = toPx(0, 0);
   const c2 = toPx(L, W);
   ctx.strokeRect(c1.px, c1.py, c2.px - c1.px, c2.py - c1.py);
 
-  // Assi tratteggiati
+  disegnaAssi(stato, L, W);
+  disegnaTraviTU(stato);
+  disegnaTraviTI(stato);
+  disegnaTegoli(stato);
+  disegnaPilastri(stato, L, W);
+  disegnaQuote(stato, L, W);
+  disegnaLineaSezione('A', 'orizzontale', L, W);
+  disegnaLineaSezione('B', 'verticale', L, W);
+
+  const pad = 3;
+  disegnaFrecciaProspetto(1, L / 2, W + pad, 'su');
+  disegnaFrecciaProspetto(2, L + pad, W / 2, 'sinistra');
+  disegnaFrecciaProspetto(3, L / 2, -pad, 'giu');
+  disegnaFrecciaProspetto(4, -pad, W / 2, 'destra');
+  disegnaBussola(dim.w - 50, 50);
+}
+
+function disegnaAssi(stato, L, W) {
   ctx.setLineDash([15, 4, 3, 4]);
   ctx.strokeStyle = COLORI.asse;
   ctx.lineWidth = 0.5;
-  const posX = posizioniX(stato);
-  posX.forEach(x => {
-    const a = toPx(x, -3);
-    const b = toPx(x, W + 3);
+
+  const numPerFila = stato.campateX.numero + 1;
+  let accX = 0;
+  for (let i = 0; i < numPerFila; i++) {
+    const a = toPx(accX, -2);
+    const b = toPx(accX, W + 2);
+    ctx.beginPath();
+    ctx.moveTo(a.px, a.py);
+    ctx.lineTo(b.px, b.py);
+    ctx.stroke();
+    if (i < stato.campateX.numero) accX += stato.campateX.lista[i].interasse;
+  }
+
+  const numFileY = stato.pilastri.numFileY;
+  for (let k = 0; k < numFileY; k++) {
+    const y = (k * W) / (numFileY - 1);
+    const a = toPx(-2, y);
+    const b = toPx(L + 2, y);
+    ctx.beginPath();
+    ctx.moveTo(a.px, a.py);
+    ctx.lineTo(b.px, b.py);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function disegnaTraviTU(stato) {
+  const segs = stato.traviTU.segmenti || [];
+  ctx.strokeStyle = COLORI.traveTU;
+  ctx.lineWidth = 2.5;
+  segs.forEach(s => {
+    const a = toPx(s.x1, s.y);
+    const b = toPx(s.x2, s.y);
     ctx.beginPath();
     ctx.moveTo(a.px, a.py);
     ctx.lineTo(b.px, b.py);
     ctx.stroke();
   });
-  [0, W].forEach(y => {
-    const a = toPx(-3, y);
-    const b = toPx(L + 3, y);
+}
+
+function disegnaTraviTI(stato) {
+  const segs = stato.traviTI.segmenti || [];
+  ctx.strokeStyle = COLORI.traveTI;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  segs.forEach(s => {
+    const a = toPx(s.x1, s.y);
+    const b = toPx(s.x2, s.y);
+    ctx.beginPath();
+    ctx.moveTo(a.px, a.py);
+    ctx.lineTo(b.px, b.py);
+    ctx.stroke();
+  });
+}
+
+function disegnaTegoli(stato) {
+  const file = stato.copertura.file || [];
+  ctx.strokeStyle = COLORI.tegolo;
+  ctx.lineWidth = 0.6;
+  ctx.setLineDash([8, 4]);
+  file.forEach(f => {
+    const yc = (f.y1 + f.y2) / 2;
+    const a = toPx(0, yc);
+    const b = toPx(f.lunghezza, yc);
     ctx.beginPath();
     ctx.moveTo(a.px, a.py);
     ctx.lineTo(b.px, b.py);
     ctx.stroke();
   });
   ctx.setLineDash([]);
+}
 
-  // Pilastri con sigle PP
-  const classif = classificaPilastri(stato);
-  classif.pilastri.forEach(p => {
-    const px = p.x - baseP / 2;
-    const py = p.y - altP / 2;
-    const a = toPx(px, py);
-    const w = Math.max(4, baseP * scala);
-    const h = Math.max(4, altP * scala);
+function disegnaPilastri(stato, L, W) {
+  const baseP = stato.pilastri.base / 100;
+  const altP = stato.pilastri.altezzaSezione / 100;
+  const numFileY = stato.pilastri.numFileY;
+  const numPerFila = stato.campateX.numero + 1;
+  const pluvialeD = stato.pilastri.pluvialeDiametro / 1000;
+  const mostraPluviale = stato.pilastri.pluviale;
 
-    ctx.fillStyle = COLORI.pilastro;
-    ctx.fillRect(a.px, a.py, w, h);
-
-    ctx.fillStyle = COLORI.testo;
-    ctx.font = 'bold 9px Arial, sans-serif';
-    ctx.textBaseline = 'bottom';
-    ctx.textAlign = 'center';
-    const yLabel = p.y === 0 ? a.py - 3 : a.py + h + 11;
-    ctx.fillText(p.sigla, a.px + w / 2, yLabel);
-    ctx.textBaseline = 'alphabetic';
-  });
-
-  // Quote campate (sopra)
-  ctx.fillStyle = COLORI.testo;
-  ctx.font = '9px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.strokeStyle = COLORI.quota;
-  ctx.lineWidth = 0.6;
-
-  const yQ1 = -2;
-  for (let i = 0; i < posX.length - 1; i++) {
-    const a = toPx(posX[i], yQ1);
-    const b = toPx(posX[i + 1], yQ1);
-    ctx.beginPath();
-    ctx.moveTo(a.px, a.py);
-    ctx.lineTo(b.px, b.py);
-    ctx.stroke();
-    freccia(a.px, a.py);
-    freccia(b.px, b.py);
-    ctx.fillText((stato.campate.lista[i].interasse * 1000).toFixed(0), (a.px + b.px) / 2, a.py - 4);
+  const posX = [0];
+  let acc = 0;
+  for (let i = 0; i < stato.campateX.numero; i++) {
+    acc += stato.campateX.lista[i].interasse;
+    posX.push(acc);
   }
 
-  // Quota totale
+  for (let k = 0; k < numFileY; k++) {
+    const y = (k * W) / (numFileY - 1);
+    for (let i = 0; i < numPerFila; i++) {
+      const x = posX[i];
+      const a = toPx(x - baseP / 2, y - altP / 2);
+      const w = baseP * scala;
+      const h = altP * scala;
+
+      ctx.fillStyle = COLORI.pilastro;
+      ctx.fillRect(a.px, a.py, w, h);
+
+      if (mostraPluviale) {
+        const c = toPx(x, y);
+        ctx.beginPath();
+        ctx.arc(c.px, c.py, (pluvialeD / 2) * scala, 0, Math.PI * 2);
+        ctx.strokeStyle = '#cc0000';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+
+      const sigla = assegnaSiglaPP(k, i, numFileY, numPerFila);
+      ctx.fillStyle = COLORI.testo;
+      ctx.font = 'bold 9px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(sigla, a.px + w / 2, a.py - 4);
+      ctx.textBaseline = 'alphabetic';
+    }
+  }
+}
+
+function assegnaSiglaPP(fila, colonna, numFileY, numPerFila) {
+  const isSud = fila === 0;
+  const isNord = fila === numFileY - 1;
+  const isOvest = colonna === 0;
+  const isEst = colonna === numPerFila - 1;
+
+  if (isSud && isOvest) return 'PP1';
+  if (isSud && isEst) return 'PP3';
+  if (isNord && isOvest) return 'PP3';
+  if (isNord && isEst) return 'PP1';
+  if (isSud) return 'PP6';
+  if (isNord) return 'PP4';
+  if (isOvest || isEst) return 'PP2';
+  return 'PP5';
+}
+
+function disegnaQuote(stato, L, W) {
+  ctx.fillStyle = COLORI.quota;
+  ctx.strokeStyle = COLORI.quota;
+  ctx.lineWidth = 0.6;
+  ctx.font = '9px Arial, sans-serif';
+  ctx.textAlign = 'center';
+
+  const yQ1 = -2;
+  let accX = 0;
+  for (let i = 0; i < stato.campateX.numero; i++) {
+    const inter = stato.campateX.lista[i].interasse;
+    const a = toPx(accX, yQ1);
+    const b = toPx(accX + inter, yQ1);
+    ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+    taccaObliqua(a.px, a.py);
+    taccaObliqua(b.px, b.py);
+    ctx.fillText((inter * 100).toFixed(0), (a.px + b.px) / 2, a.py - 4);
+    accX += inter;
+  }
+
   const yQT = -4;
   const aT = toPx(0, yQT);
   const bT = toPx(L, yQT);
-  ctx.beginPath();
-  ctx.moveTo(aT.px, aT.py);
-  ctx.lineTo(bT.px, bT.py);
-  ctx.stroke();
-  freccia(aT.px, aT.py);
-  freccia(bT.px, bT.py);
+  ctx.beginPath(); ctx.moveTo(aT.px, aT.py); ctx.lineTo(bT.px, bT.py); ctx.stroke();
+  taccaObliqua(aT.px, aT.py);
+  taccaObliqua(bT.px, bT.py);
   ctx.font = 'bold 10px Arial, sans-serif';
-  ctx.fillText((L * 1000).toFixed(0), (aT.px + bT.px) / 2, aT.py - 4);
+  ctx.fillText((L * 100).toFixed(0), (aT.px + bT.px) / 2, aT.py - 5);
 
-  // Quota luce
-  const xQ = L + 2.5;
+  const xQ = L + 2;
   const aL = toPx(xQ, 0);
   const bL = toPx(xQ, W);
-  ctx.beginPath();
-  ctx.moveTo(aL.px, aL.py);
-  ctx.lineTo(bL.px, bL.py);
-  ctx.stroke();
-  freccia(aL.px, aL.py);
-  freccia(bL.px, bL.py);
+  ctx.beginPath(); ctx.moveTo(aL.px, aL.py); ctx.lineTo(bL.px, bL.py); ctx.stroke();
+  taccaObliqua(aL.px, aL.py);
+  taccaObliqua(bL.px, bL.py);
   ctx.save();
-  ctx.translate(bL.px + 12, (aL.py + bL.py) / 2);
+  ctx.translate(bL.px + 14, (aL.py + bL.py) / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.font = 'bold 10px Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText((W * 1000).toFixed(0), 0, 0);
+  ctx.fillText((W * 100).toFixed(0), 0, 0);
   ctx.restore();
   ctx.textAlign = 'center';
 
-  // Linee sezione A-A e B-B
-  disegnaLineaSezione('A', 'orizzontale', L, W);
-  disegnaLineaSezione('B', 'verticale', L, W);
-
-  // Frecce prospetti 1-2-3-4
-  const pad = offsetP + 2;
-  disegnaFrecciaProspetto(1, L / 2, W + pad, 'su');
-  disegnaFrecciaProspetto(2, L + pad, W / 2, 'sinistra');
-  disegnaFrecciaProspetto(3, L / 2, -pad, 'giu');
-  disegnaFrecciaProspetto(4, -pad, W / 2, 'destra');
-
-  // Bussola nord
-  disegnaBussola(canvas.width / dpr - 60, 60);
+  const xQY = -2;
+  const numFileY = stato.pilastri.numFileY;
+  for (let k = 0; k < numFileY - 1; k++) {
+    const y1 = (k * W) / (numFileY - 1);
+    const y2 = ((k + 1) * W) / (numFileY - 1);
+    const a = toPx(xQY, y1);
+    const b = toPx(xQY, y2);
+    ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+    taccaObliqua(a.px, a.py);
+    taccaObliqua(b.px, b.py);
+    ctx.save();
+    ctx.translate(a.px - 8, (a.py + b.py) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.font = '9px Arial, sans-serif';
+    ctx.fillText(((y2 - y1) * 100).toFixed(0), 0, 0);
+    ctx.restore();
+  }
 }
 
-function posizioniX(stato) {
-  const pos = [0];
-  let acc = 0;
-  const lista = stato.campate.lista || [];
-  lista.forEach(c => {
-    acc += c.interasse;
-    pos.push(acc);
-  });
-  return pos;
-}
-
-function disegnaPannelli(stato, L, W, offsetP) {
-  const spP = stato.pannelli.spessore / 100;
-  ctx.strokeStyle = COLORI.pannello;
-  ctx.lineWidth = 0.7;
-  const lati = stato.pannelli.lati;
-
-  const linee = [];
-  if (lati.sud && lati.sud.attivo) {
-    linee.push([0, -offsetP, L, -offsetP]);
-    linee.push([0, -offsetP - spP, L, -offsetP - spP]);
-  }
-  if (lati.nord && lati.nord.attivo) {
-    linee.push([0, W + offsetP, L, W + offsetP]);
-    linee.push([0, W + offsetP + spP, L, W + offsetP + spP]);
-  }
-  if (lati.ovest && lati.ovest.attivo) {
-    linee.push([-offsetP, 0, -offsetP, W]);
-    linee.push([-offsetP - spP, 0, -offsetP - spP, W]);
-  }
-  if (lati.est && lati.est.attivo) {
-    linee.push([L + offsetP, 0, L + offsetP, W]);
-    linee.push([L + offsetP + spP, 0, L + offsetP + spP, W]);
-  }
-
-  linee.forEach(l => {
-    const a = toPx(l[0], l[1]);
-    const b = toPx(l[2], l[3]);
-    ctx.beginPath();
-    ctx.moveTo(a.px, a.py);
-    ctx.lineTo(b.px, b.py);
-    ctx.stroke();
-  });
-}
-
-function freccia(px, py) {
+function taccaObliqua(px, py) {
   const s = 3;
   ctx.beginPath();
   ctx.moveTo(px - s, py + s);
@@ -318,37 +368,31 @@ function freccia(px, py) {
 function disegnaLineaSezione(lettera, orientamento, L, W) {
   ctx.strokeStyle = COLORI.sezione;
   ctx.fillStyle = COLORI.sezione;
-  ctx.lineWidth = 0.9;
+  ctx.lineWidth = 1;
   ctx.setLineDash([20, 6, 3, 6]);
-  ctx.font = 'bold 11px Arial, sans-serif';
+  ctx.font = 'bold 12px Arial, sans-serif';
   ctx.textAlign = 'center';
 
   if (orientamento === 'orizzontale') {
     const y = W / 2;
-    const a = toPx(-2, y);
-    const b = toPx(L + 2, y);
-    ctx.beginPath();
-    ctx.moveTo(a.px, a.py);
-    ctx.lineTo(b.px, b.py);
-    ctx.stroke();
+    const a = toPx(-3, y);
+    const b = toPx(L + 3, y);
+    ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
     ctx.setLineDash([]);
     triangolino(a.px, a.py, 'destra');
     triangolino(b.px, b.py, 'sinistra');
-    ctx.fillText(lettera, a.px - 10, a.py + 4);
-    ctx.fillText(lettera, b.px + 10, b.py + 4);
+    ctx.fillText(lettera, a.px - 12, a.py + 4);
+    ctx.fillText(lettera, b.px + 12, b.py + 4);
   } else {
     const x = L / 2;
-    const a = toPx(x, -2);
-    const b = toPx(x, W + 2);
-    ctx.beginPath();
-    ctx.moveTo(a.px, a.py);
-    ctx.lineTo(b.px, b.py);
-    ctx.stroke();
+    const a = toPx(x, -3);
+    const b = toPx(x, W + 3);
+    ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
     ctx.setLineDash([]);
     triangolino(a.px, a.py, 'giu');
     triangolino(b.px, b.py, 'su');
     ctx.fillText(lettera, a.px, a.py - 6);
-    ctx.fillText(lettera, b.px, b.py + 12);
+    ctx.fillText(lettera, b.px, b.py + 14);
   }
   ctx.textAlign = 'center';
 }
@@ -380,7 +424,7 @@ function triangolino(px, py, direzione) {
 
 function disegnaFrecciaProspetto(numero, x, y, direzione) {
   const p = toPx(x, y);
-  const r = 9;
+  const r = 10;
 
   ctx.strokeStyle = COLORI.freccia;
   ctx.fillStyle = '#ffffff';
@@ -396,12 +440,12 @@ function disegnaFrecciaProspetto(numero, x, y, direzione) {
   const ang = dirMap[direzione];
   const cx = p.px;
   const cy = p.py;
-  const tipX = cx + Math.sin(ang) * 4;
-  const tipY = cy - Math.cos(ang) * 4;
-  const b1X = cx + Math.sin(ang + 2) * 4;
-  const b1Y = cy - Math.cos(ang + 2) * 4;
-  const b2X = cx + Math.sin(ang - 2) * 4;
-  const b2Y = cy - Math.cos(ang - 2) * 4;
+  const tipX = cx + Math.sin(ang) * 5;
+  const tipY = cy - Math.cos(ang) * 5;
+  const b1X = cx + Math.sin(ang + 2) * 5;
+  const b1Y = cy - Math.cos(ang + 2) * 5;
+  const b2X = cx + Math.sin(ang - 2) * 5;
+  const b2Y = cy - Math.cos(ang - 2) * 5;
   ctx.moveTo(tipX, tipY);
   ctx.lineTo(b1X, b1Y);
   ctx.lineTo(b2X, b2Y);
@@ -409,10 +453,10 @@ function disegnaFrecciaProspetto(numero, x, y, direzione) {
   ctx.fill();
 
   ctx.fillStyle = COLORI.testo;
-  ctx.font = 'bold 8px Arial, sans-serif';
+  ctx.font = 'bold 9px Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(numero, p.px + 1, p.py + r + 8);
+  ctx.fillText(numero, p.px, p.py + 1);
   ctx.textBaseline = 'alphabetic';
 }
 
